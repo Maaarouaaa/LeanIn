@@ -46,7 +46,7 @@ export default async function RootLayout({
 }>) {
   // Ensure request-time rendering so data mode reflects current env.
   await connection();
-  const dataMode = getDataMode();
+  const dataMode = await getDataMode();
 
   return (
     <html

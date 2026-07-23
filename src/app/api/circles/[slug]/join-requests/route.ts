@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAuthenticatedMember } from "@/lib/auth";
 import { MAX_NOTE_LENGTH } from "@/lib/constants";
 import { getDataStore } from "@/lib/data/store";
+import { logSupabaseError } from "@/lib/supabase/server";
 
 interface RouteContext {
   params: Promise<{ slug: string }>;
@@ -31,7 +32,7 @@ export async function POST(request: Request, context: RouteContext) {
       );
     }
 
-    const store = getDataStore();
+    const store = await getDataStore();
     const circle = await store.getCircleBySlug(slug);
     if (!circle) {
       return NextResponse.json({ error: "Circle not found." }, { status: 404 });
@@ -68,6 +69,7 @@ export async function POST(request: Request, context: RouteContext) {
       { status: 201 },
     );
   } catch (error) {
+    logSupabaseError("join-requests API failed", error);
     const code =
       error && typeof error === "object" && "code" in error
         ? String((error as { code: string }).code)
@@ -99,7 +101,7 @@ export async function GET(_request: Request, context: RouteContext) {
   try {
     const memberId = await requireAuthenticatedMember();
     const { slug } = await context.params;
-    const store = getDataStore();
+    const store = await getDataStore();
     const circle = await store.getCircleBySlug(slug);
     if (!circle) {
       return NextResponse.json({ error: "Circle not found." }, { status: 404 });
@@ -108,6 +110,7 @@ export async function GET(_request: Request, context: RouteContext) {
     const existing = await store.getJoinRequest(memberId, circle.id);
     return NextResponse.json({ request: existing });
   } catch (error) {
+    logSupabaseError("join-requests API failed", error);
     return NextResponse.json(
       {
         error:

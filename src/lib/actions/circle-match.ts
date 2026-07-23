@@ -8,6 +8,7 @@ import {
   inputFromPreferences,
   preferencesFromInput,
 } from "@/lib/data/types";
+import { logSupabaseError } from "@/lib/supabase/server";
 import type {
   CircleMatch,
   JoinRequest,
@@ -15,6 +16,10 @@ import type {
   MemberPreferences,
   Profile,
 } from "@/lib/types";
+
+function logActionError(context: string, error: unknown) {
+  logSupabaseError(context, error);
+}
 
 export type ActionResult<T> =
   | { ok: true; data: T }
@@ -38,11 +43,12 @@ export async function saveMemberPreferences(
 
   try {
     const memberId = await requireAuthenticatedMember();
-    const store = getDataStore();
+    const store = await getDataStore();
     const preferences = preferencesFromInput(input);
     const profile = await store.savePreferences(memberId, preferences);
     return { ok: true, data: { profile, mode: store.mode } };
   } catch (error) {
+    logActionError("server action failed", error);
     return {
       ok: false,
       error:
@@ -62,7 +68,7 @@ export async function getMemberPreferences(): Promise<
 > {
   try {
     await requireAuthenticatedMember();
-    const store = getDataStore();
+    const store = await getDataStore();
     const profile = await store.getDemoProfile();
     return {
       ok: true,
@@ -73,6 +79,7 @@ export async function getMemberPreferences(): Promise<
       },
     };
   } catch (error) {
+    logActionError("server action failed", error);
     return {
       ok: false,
       error:
@@ -96,7 +103,7 @@ export async function getRankedMatches(filters?: {
 > {
   try {
     await requireAuthenticatedMember();
-    const store = getDataStore();
+    const store = await getDataStore();
     const profile = await store.getDemoProfile();
     if (!profile.preferences) {
       return {
@@ -158,6 +165,7 @@ export async function getRankedMatches(filters?: {
       },
     };
   } catch (error) {
+    logActionError("server action failed", error);
     return {
       ok: false,
       error:
@@ -182,7 +190,7 @@ export async function createJoinRequestAction(input: {
 
   try {
     const memberId = await requireAuthenticatedMember();
-    const store = getDataStore();
+    const store = await getDataStore();
     const existing = await store.getJoinRequest(memberId, input.circleId);
     if (existing && existing.status === "pending") {
       return {
@@ -200,6 +208,7 @@ export async function createJoinRequestAction(input: {
 
     return { ok: true, data: { request, mode: store.mode } };
   } catch (error) {
+    logActionError("server action failed", error);
     const code =
       error && typeof error === "object" && "code" in error
         ? String((error as { code: string }).code)
@@ -223,10 +232,11 @@ export async function getJoinRequestStatus(
 > {
   try {
     const memberId = await requireAuthenticatedMember();
-    const store = getDataStore();
+    const store = await getDataStore();
     const request = await store.getJoinRequest(memberId, circleId);
     return { ok: true, data: { request, mode: store.mode } };
   } catch (error) {
+    logActionError("server action failed", error);
     return {
       ok: false,
       error:
@@ -240,7 +250,7 @@ export async function getJoinRequestStatus(
 export async function getCircleBySlugAction(slug: string) {
   try {
     const memberId = await requireAuthenticatedMember();
-    const store = getDataStore();
+    const store = await getDataStore();
     const circle = await store.getCircleBySlug(slug);
     if (!circle) {
       return { ok: false as const, error: "Circle not found." };
@@ -261,6 +271,7 @@ export async function getCircleBySlugAction(slug: string) {
       data: { circle, request, match, mode: store.mode },
     };
   } catch (error) {
+    logActionError("server action failed", error);
     return {
       ok: false as const,
       error:

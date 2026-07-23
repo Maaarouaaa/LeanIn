@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEMO_PROFILE_ID } from "@/lib/constants";
 import { memoryStore, resetMemoryStore } from "@/lib/data/memory";
+import { resetDataModeCache } from "@/lib/data/store";
 import { SEED_CIRCLES } from "@/lib/data/seed";
 import { saveMemberPreferences } from "@/lib/actions/circle-match";
 
@@ -9,9 +10,18 @@ vi.mock("@/lib/auth", () => ({
   getAuthenticatedMemberId: async () => DEMO_PROFILE_ID,
 }));
 
+function forceMemoryAdapter() {
+  resetMemoryStore();
+  resetDataModeCache();
+  delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+  delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+  delete process.env.SUPABASE_SECRET_KEY;
+}
+
 describe("join request persistence", () => {
   beforeEach(() => {
-    resetMemoryStore();
+    forceMemoryAdapter();
   });
 
   it("creates a pending join request", async () => {
@@ -56,7 +66,7 @@ describe("join request persistence", () => {
 
 describe("preference persistence", () => {
   beforeEach(() => {
-    resetMemoryStore();
+    forceMemoryAdapter();
   });
 
   it("saves member preferences for the demo profile", async () => {
@@ -71,6 +81,8 @@ describe("preference persistence", () => {
     });
 
     expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.mode).toBe("memory");
     const profile = await memoryStore.getDemoProfile();
     expect(profile.preferences?.location).toBe("Oakland, CA");
     expect(profile.preferences?.includeVirtualOutsideLocation).toBe(true);

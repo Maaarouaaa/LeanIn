@@ -1,6 +1,6 @@
 import { DEMO_PROFILE_ID } from "@/lib/constants";
 import type { DataStore } from "@/lib/data/types";
-import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { getSupabaseAdmin, logSupabaseError } from "@/lib/supabase/server";
 import type {
   CareerStage,
   Circle,
@@ -13,6 +13,11 @@ import type {
   MemberPreferences,
   Profile,
 } from "@/lib/types";
+
+function throwQueryError(context: string, error: unknown): never {
+  logSupabaseError(context, error);
+  throw error;
+}
 
 interface ProfileRow {
   id: string;
@@ -114,7 +119,7 @@ export const supabaseStore: DataStore = {
       .select("*")
       .eq("id", DEMO_PROFILE_ID)
       .single();
-    if (error) throw error;
+    if (error) throwQueryError("profiles.getDemoProfile failed", error);
     return mapProfile(data as ProfileRow);
   },
 
@@ -129,7 +134,7 @@ export const supabaseStore: DataStore = {
       .eq("id", profileId)
       .select("*")
       .single();
-    if (error) throw error;
+    if (error) throwQueryError("profiles.savePreferences failed", error);
     return mapProfile(data as ProfileRow);
   },
 
@@ -139,7 +144,7 @@ export const supabaseStore: DataStore = {
       .from("circles")
       .select("*")
       .order("name", { ascending: true });
-    if (error) throw error;
+    if (error) throwQueryError("circles.listCircles failed", error);
     return (data as CircleRow[]).map(mapCircle);
   },
 
@@ -150,7 +155,7 @@ export const supabaseStore: DataStore = {
       .select("*")
       .eq("slug", slug)
       .maybeSingle();
-    if (error) throw error;
+    if (error) throwQueryError("circles.getCircleBySlug failed", error);
     return data ? mapCircle(data as CircleRow) : null;
   },
 
@@ -161,7 +166,7 @@ export const supabaseStore: DataStore = {
       .select("*")
       .eq("id", id)
       .maybeSingle();
-    if (error) throw error;
+    if (error) throwQueryError("circles.getCircleById failed", error);
     return data ? mapCircle(data as CircleRow) : null;
   },
 
@@ -188,7 +193,7 @@ export const supabaseStore: DataStore = {
         (duplicate as Error & { code: string }).code = "DUPLICATE_REQUEST";
         throw duplicate;
       }
-      throw error;
+      throwQueryError("join_requests.createJoinRequest failed", error);
     }
 
     return mapJoinRequest(data as JoinRequestRow);
@@ -202,7 +207,7 @@ export const supabaseStore: DataStore = {
       .eq("profile_id", profileId)
       .eq("circle_id", circleId)
       .maybeSingle();
-    if (error) throw error;
+    if (error) throwQueryError("join_requests.getJoinRequest failed", error);
     return data ? mapJoinRequest(data as JoinRequestRow) : null;
   },
 
@@ -213,7 +218,9 @@ export const supabaseStore: DataStore = {
       .select("*")
       .eq("profile_id", profileId)
       .order("created_at", { ascending: false });
-    if (error) throw error;
+    if (error) {
+      throwQueryError("join_requests.listJoinRequestsForProfile failed", error);
+    }
     return (data as JoinRequestRow[]).map(mapJoinRequest);
   },
 };

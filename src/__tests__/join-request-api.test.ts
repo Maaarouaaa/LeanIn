@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEMO_PROFILE_ID } from "@/lib/constants";
 import { resetMemoryStore } from "@/lib/data/memory";
+import { resetDataModeCache } from "@/lib/data/store";
 import { SEED_CIRCLES } from "@/lib/data/seed";
 import { POST } from "@/app/api/circles/[slug]/join-requests/route";
 
@@ -12,6 +13,11 @@ vi.mock("@/lib/auth", () => ({
 describe("POST /api/circles/:slug/join-requests", () => {
   beforeEach(() => {
     resetMemoryStore();
+    resetDataModeCache();
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    delete process.env.SUPABASE_SECRET_KEY;
   });
 
   it("persists a join request and returns id + status", async () => {
