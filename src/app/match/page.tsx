@@ -1,11 +1,13 @@
 import { MatchForm } from "@/components/match/MatchForm";
+import { EditorialHero } from "@/components/ui/EditorialHero";
+import { ProgressTracker } from "@/components/ui/ProgressTracker";
 import { getMemberPreferences } from "@/lib/actions/circle-match";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Find your Circle",
+  title: "Preferences",
 };
 
 export default async function MatchPage() {
@@ -13,28 +15,30 @@ export default async function MatchPage() {
   const preferences = result.ok ? result.data.preferences : null;
 
   return (
-    <div className="page-enter mx-auto max-w-3xl space-y-8">
-      <header className="space-y-3 border-b border-border pb-8">
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-burgundy">
-          Personalized matching
-        </p>
-        <h1 className="font-serif text-4xl text-ink sm:text-5xl">
-          Tell us what belonging looks like for you
-        </h1>
-        <p className="max-w-2xl text-ink-muted">
-          Lean In Connect offers many ways to participate. Circle Match helps
-          you find a small, supportive Circle faster—using preferences that map
-          directly to a transparent ranking score.
-        </p>
-      </header>
+    <div className="page-enter">
+      <EditorialHero
+        tone="split"
+        eyebrow="Personalized Circle matching"
+        title="Find your people."
+        editorial="The right room can change what feels possible."
+        outlineWord="Match"
+        imageSrc="/assets/heroes/hero-match.jpg"
+        imageAlt="Three women smiling together at a Lean In community gathering"
+        badge="About 3 minutes"
+        progress={<ProgressTracker currentStep={1} />}
+      />
 
-      {!result.ok ? (
-        <p className="rounded-md border border-danger/20 bg-danger-soft px-4 py-3 text-sm text-danger" role="alert">
-          {result.error}
-        </p>
-      ) : null}
-
-      <MatchForm initialPreferences={preferences} />
+      <div className="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-10 lg:py-14">
+        {!result.ok ? (
+          <p
+            className="mb-6 border border-error bg-error-soft px-4 py-3 text-sm text-error"
+            role="alert"
+          >
+            {result.error}
+          </p>
+        ) : null}
+        <MatchForm initialPreferences={preferences} />
+      </div>
     </div>
   );
 }

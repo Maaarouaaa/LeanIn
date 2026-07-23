@@ -30,13 +30,13 @@ export interface DataStore {
 
 export function preferencesFromInput(input: MatchFormInput): MemberPreferences {
   return {
-    supportTypes: input.supportTypes,
-    careerStage: input.careerStage,
     goals: input.goals,
+    careerStage: input.careerStage,
     format: input.format,
     frequency: input.frequency,
     location: input.location.trim(),
-    availability: input.availability?.trim() ?? "",
+    availability: input.availability ?? "",
+    includeVirtualOutsideLocation: input.includeVirtualOutsideLocation,
   };
 }
 
@@ -53,12 +53,12 @@ export function inputFromPreferences(
   }
 
   return {
-    supportTypes: preferences.supportTypes,
-    careerStage: preferences.careerStage,
     goals: preferences.goals,
+    careerStage: preferences.careerStage,
     format: preferences.format,
     frequency: preferences.frequency,
     location: preferences.location,
     availability: preferences.availability,
+    includeVirtualOutsideLocation: preferences.includeVirtualOutsideLocation,
   };
 }

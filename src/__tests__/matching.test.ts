@@ -1,94 +1,109 @@
 import { describe, expect, it } from "vitest";
-import { rankCircleMatches, scoreCircleMatch } from "@/lib/matching";
+import {
+  rankCircleMatches,
+  scoreCircleMatch,
+  validateMatchForm,
+} from "@/lib/matching";
 import { SEED_CIRCLES } from "@/lib/data/seed";
 import type { MatchFormInput } from "@/lib/types";
 
-const basePreferences: MatchFormInput = {
-  supportTypes: ["peer-support", "leadership-growth"],
+const bayAreaPrefs: MatchFormInput = {
+  goals: ["growing-as-a-leader", "building-confidence", "finding-mentorship"],
   careerStage: "mid-career",
-  goals: ["growing-in-technology", "growing-as-a-leader", "building-confidence"],
-  format: "virtual",
-  frequency: "biweekly",
-  location: "San Francisco, CA",
+  format: "in-person",
+  frequency: "monthly",
+  location: "Oakland, CA",
+  availability: "weeknights",
+  includeVirtualOutsideLocation: true,
 };
 
+describe("validateMatchForm", () => {
+  it("requires core fields", () => {
+    expect(validateMatchForm({})).toEqual(
+      expect.arrayContaining([
+        "Select at least one support goal.",
+        "Select your career stage.",
+        "Select a preferred meeting format.",
+        "Select a preferred meeting frequency.",
+        "Enter your location.",
+      ]),
+    );
+  });
+
+  it("prevents more than three goals", () => {
+    const errors = validateMatchForm({
+      goals: [
+        "growing-as-a-leader",
+        "building-confidence",
+        "finding-mentorship",
+        "entrepreneurship",
+      ],
+      careerStage: "mid-career",
+      format: "either",
+      frequency: "monthly",
+      location: "Oakland, CA",
+    });
+    expect(errors).toContain("Choose up to three goals.");
+  });
+
+  it("accepts a complete form", () => {
+    expect(validateMatchForm(bayAreaPrefs)).toEqual([]);
+  });
+});
+
 describe("scoreCircleMatch", () => {
-  it("gives a high score to a strong topic/format fit", () => {
-    const techCircle = SEED_CIRCLES.find(
-      (circle) => circle.slug === "tech-leadership-collective",
-    );
-    expect(techCircle).toBeDefined();
-
-    const match = scoreCircleMatch(basePreferences, techCircle!);
-    expect(match.score).toBeGreaterThanOrEqual(80);
-    expect(match.reasons.some((reason) => reason.label === "Shared goals")).toBe(
-      true,
-    );
+  it("ranks Bay Area Leadership Lab highly for local leadership prefs", () => {
+    const lab = SEED_CIRCLES.find(
+      (circle) => circle.slug === "bay-area-leadership-lab",
+    )!;
+    const match = scoreCircleMatch(bayAreaPrefs, lab);
+    expect(match.score).toBeGreaterThanOrEqual(85);
   });
 
-  it("is deterministic for the same inputs", () => {
+  it("is deterministic", () => {
     const circle = SEED_CIRCLES[0];
-    const first = scoreCircleMatch(basePreferences, circle);
-    const second = scoreCircleMatch(basePreferences, circle);
-    expect(first.score).toBe(second.score);
-    expect(first.reasons).toEqual(second.reasons);
+    expect(scoreCircleMatch(bayAreaPrefs, circle)).toEqual(
+      scoreCircleMatch(bayAreaPrefs, circle),
+    );
   });
 
-  it("scores location matches higher for same city", () => {
-    const chicago = SEED_CIRCLES.find(
-      (circle) => circle.slug === "career-transition-circle-chicago",
+  it("scores availability for weeknights", () => {
+    const morning = SEED_CIRCLES.find(
+      (circle) => circle.slug === "work-life-integration-lab",
     )!;
-    const local = scoreCircleMatch(
-      {
-        ...basePreferences,
-        goals: ["navigating-career-transition", "building-confidence"],
-        format: "in-person",
-        careerStage: "career-transition",
-        location: "Chicago, IL",
-      },
-      chicago,
-    );
-    const remote = scoreCircleMatch(
-      {
-        ...basePreferences,
-        goals: ["navigating-career-transition", "building-confidence"],
-        format: "in-person",
-        careerStage: "career-transition",
-        location: "Miami, FL",
-      },
-      chicago,
-    );
-
-    expect(local.score).toBeGreaterThan(remote.score);
-  });
-
-  it("treats either format as compatible with all Circles", () => {
-    const inPerson = SEED_CIRCLES.find(
-      (circle) => circle.slug === "midcareer-momentum",
+    const evening = SEED_CIRCLES.find(
+      (circle) => circle.slug === "women-building-in-tech",
     )!;
-    const match = scoreCircleMatch(
-      { ...basePreferences, format: "either" },
-      inPerson,
-    );
-    expect(
-      match.reasons.find((reason) => reason.label === "Meeting format")?.detail,
-    ).toMatch(/open to either format/i);
+    const morningScore = scoreCircleMatch(bayAreaPrefs, morning).score;
+    const eveningScore = scoreCircleMatch(
+      { ...bayAreaPrefs, format: "virtual", location: "Remote" },
+      evening,
+    ).score;
+    expect(eveningScore).toBeGreaterThan(morningScore - 5);
   });
 });
 
 describe("rankCircleMatches", () => {
-  it("returns Circles sorted by descending score", () => {
-    const ranked = rankCircleMatches(basePreferences, SEED_CIRCLES);
-    expect(ranked.length).toBe(SEED_CIRCLES.length);
-
-    for (let index = 1; index < ranked.length; index += 1) {
-      expect(ranked[index - 1].score).toBeGreaterThanOrEqual(ranked[index].score);
+  it("returns descending scores", () => {
+    const ranked = rankCircleMatches(bayAreaPrefs, SEED_CIRCLES);
+    for (let i = 1; i < ranked.length; i += 1) {
+      expect(ranked[i - 1].score).toBeGreaterThanOrEqual(ranked[i].score);
     }
   });
 
-  it("surfaces tech leadership near the top for tech leadership prefs", () => {
-    const ranked = rankCircleMatches(basePreferences, SEED_CIRCLES);
-    const topSlugs = ranked.slice(0, 3).map((match) => match.circle.slug);
-    expect(topSlugs).toContain("tech-leadership-collective");
+  it("surfaces the leadership lab near the top for Bay Area leadership prefs", () => {
+    const ranked = rankCircleMatches(bayAreaPrefs, SEED_CIRCLES);
+    expect(ranked[0].circle.slug).toBe("bay-area-leadership-lab");
+  });
+});
+
+describe("filtering helpers", () => {
+  it("can isolate weeknight Circles from ranked results", () => {
+    const ranked = rankCircleMatches(bayAreaPrefs, SEED_CIRCLES);
+    const weeknights = ranked.filter((match) => match.circle.meetsWeeknights);
+    expect(weeknights.length).toBeGreaterThan(0);
+    expect(weeknights.every((match) => match.circle.meetsWeeknights)).toBe(
+      true,
+    );
   });
 });

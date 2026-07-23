@@ -1,5 +1,10 @@
 import { cn } from "@/lib/cn";
-import type { InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
+import type {
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from "react";
 
 interface FieldProps {
   id: string;
@@ -20,21 +25,17 @@ export function Field({
   children,
   className,
 }: FieldProps) {
-  const describedBy = [
-    hint ? `${id}-hint` : null,
-    error ? `${id}-error` : null,
-  ]
-    .filter(Boolean)
-    .join(" ");
-
   return (
     <div className={cn("space-y-2", className)}>
       <div className="flex items-baseline justify-between gap-3">
-        <label htmlFor={id} className="text-sm font-medium text-ink">
+        <label htmlFor={id} className="text-sm font-bold text-ink">
           {label}
+          {!optional ? <span className="text-error"> *</span> : null}
         </label>
         {optional ? (
-          <span className="text-xs text-ink-subtle">Optional</span>
+          <span className="font-editorial text-xs italic text-ink-muted">
+            Optional
+          </span>
         ) : null}
       </div>
       {children}
@@ -44,28 +45,40 @@ export function Field({
         </p>
       ) : null}
       {error ? (
-        <p id={`${id}-error`} className="text-sm text-danger" role="alert">
+        <p id={`${id}-error`} className="text-sm font-medium text-error" role="alert">
           {error}
         </p>
       ) : null}
-      {/* describedBy is applied by callers via aria-describedby when needed */}
-      <span className="sr-only" data-describedby={describedBy} />
     </div>
   );
 }
 
-interface TextInputProps extends InputHTMLAttributes<HTMLInputElement> {
-  error?: boolean;
-}
+const controlClass =
+  "min-h-12 w-full border border-ink bg-surface px-3.5 text-sm text-ink placeholder:text-ink-muted";
 
-export function TextInput({ className, error, ...props }: TextInputProps) {
+export function TextInput({
+  className,
+  error,
+  ...props
+}: InputHTMLAttributes<HTMLInputElement> & { error?: boolean }) {
   return (
     <input
+      className={cn(controlClass, error && "border-error bg-error-soft", className)}
+      {...props}
+    />
+  );
+}
+
+export function TextArea({
+  className,
+  error,
+  ...props
+}: TextareaHTMLAttributes<HTMLTextAreaElement> & { error?: boolean }) {
+  return (
+    <textarea
       className={cn(
-        "min-h-11 w-full rounded-md border bg-surface px-3.5 text-sm text-ink placeholder:text-ink-subtle transition-colors",
-        error
-          ? "border-danger"
-          : "border-border-strong focus:border-burgundy",
+        "min-h-32 w-full resize-y border border-ink bg-surface px-3.5 py-3 text-sm text-ink placeholder:text-ink-muted",
+        error && "border-error bg-error-soft",
         className,
       )}
       {...props}
@@ -73,21 +86,23 @@ export function TextInput({ className, error, ...props }: TextInputProps) {
   );
 }
 
-interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
-  error?: boolean;
-}
-
-export function TextArea({ className, error, ...props }: TextAreaProps) {
+export function SelectInput({
+  className,
+  error,
+  children,
+  ...props
+}: SelectHTMLAttributes<HTMLSelectElement> & { error?: boolean }) {
   return (
-    <textarea
+    <select
       className={cn(
-        "min-h-28 w-full rounded-md border bg-surface px-3.5 py-3 text-sm text-ink placeholder:text-ink-subtle transition-colors resize-y",
-        error
-          ? "border-danger"
-          : "border-border-strong focus:border-burgundy",
+        controlClass,
+        "appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22><path fill=%22%23171717%22 d=%22M6 8 0 0h12z%22/></svg>')] bg-[length:12px_8px] bg-[right_1rem_center] bg-no-repeat pr-10",
+        error && "border-error bg-error-soft",
         className,
       )}
       {...props}
-    />
+    >
+      {children}
+    </select>
   );
 }

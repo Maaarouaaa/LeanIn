@@ -1,156 +1,117 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
-import { Field, TextArea, TextInput } from "@/components/ui/Field";
-import { ProgressIndicator } from "@/components/ui/ProgressIndicator";
-import { SelectableCard, SelectableChip } from "@/components/ui/Selectable";
+import { Field, SelectInput, TextInput } from "@/components/ui/Field";
+import {
+  GoalCard,
+  RadioPill,
+} from "@/components/ui/SelectableControls";
 import { useToast } from "@/components/ui/Toast";
 import {
+  AVAILABILITY_OPTIONS,
   CAREER_STAGE_OPTIONS,
   FORMAT_OPTIONS,
   FREQUENCY_OPTIONS,
   GOAL_OPTIONS,
-  SUPPORT_TYPE_OPTIONS,
+  MAX_GOALS,
 } from "@/lib/constants";
 import { saveMemberPreferences } from "@/lib/actions/circle-match";
 import type {
+  AvailabilityWindow,
   CareerStage,
   Goal,
   MeetingFormat,
   MeetingFrequency,
   MemberPreferences,
-  SupportType,
 } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
-
-const STEPS = ["Support & stage", "Goals & format", "Location"];
+import { useState, useTransition } from "react";
 
 interface MatchFormProps {
   initialPreferences?: MemberPreferences | null;
 }
 
 interface FormState {
-  supportTypes: SupportType[];
-  careerStage: CareerStage | "";
   goals: Goal[];
+  careerStage: CareerStage | "";
   format: MeetingFormat | "";
   frequency: MeetingFrequency | "";
   location: string;
-  availability: string;
+  availability: AvailabilityWindow | "";
+  includeVirtualOutsideLocation: boolean;
 }
 
 type FormErrors = Partial<Record<keyof FormState | "form", string>>;
 
 function toFormState(preferences?: MemberPreferences | null): FormState {
   return {
-    supportTypes: preferences?.supportTypes ?? [],
-    careerStage: preferences?.careerStage ?? "",
     goals: preferences?.goals ?? [],
+    careerStage: preferences?.careerStage ?? "",
     format: preferences?.format ?? "",
     frequency: preferences?.frequency ?? "",
     location: preferences?.location ?? "",
     availability: preferences?.availability ?? "",
+    includeVirtualOutsideLocation:
+      preferences?.includeVirtualOutsideLocation ?? true,
   };
 }
 
 export function MatchForm({ initialPreferences }: MatchFormProps) {
   const router = useRouter();
   const { pushToast } = useToast();
-  const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>(() =>
     toFormState(initialPreferences),
   );
   const [errors, setErrors] = useState<FormErrors>({});
   const [isPending, startTransition] = useTransition();
 
-  const progressLabel = useMemo(
-    () => `Step ${step} of ${STEPS.length}`,
-    [step],
-  );
-
-  function toggleSupport(value: SupportType) {
-    setForm((current) => {
-      const exists = current.supportTypes.includes(value);
-      return {
-        ...current,
-        supportTypes: exists
-          ? current.supportTypes.filter((item) => item !== value)
-          : [...current.supportTypes, value],
-      };
-    });
-  }
-
   function toggleGoal(value: Goal) {
     setForm((current) => {
       const exists = current.goals.includes(value);
-      return {
-        ...current,
-        goals: exists
-          ? current.goals.filter((item) => item !== value)
-          : [...current.goals, value],
-      };
+      if (exists) {
+        return {
+          ...current,
+          goals: current.goals.filter((item) => item !== value),
+        };
+      }
+      if (current.goals.length >= MAX_GOALS) {
+        setErrors((prev) => ({
+          ...prev,
+          goals: "Choose up to three.",
+        }));
+        return current;
+      }
+      setErrors((prev) => ({ ...prev, goals: undefined }));
+      return { ...current, goals: [...current.goals, value] };
     });
   }
 
-  function validateStep(currentStep: number): FormErrors {
-    const nextErrors: FormErrors = {};
-    if (currentStep === 1) {
-      if (!form.supportTypes.length) {
-        nextErrors.supportTypes = "Select at least one kind of support.";
-      }
-      if (!form.careerStage) {
-        nextErrors.careerStage = "Select your career stage.";
-      }
-    }
-    if (currentStep === 2) {
-      if (!form.goals.length) {
-        nextErrors.goals = "Select at least one topic or goal.";
-      }
-      if (!form.format) {
-        nextErrors.format = "Choose virtual, in-person, or either.";
-      }
-      if (!form.frequency) {
-        nextErrors.frequency = "Select how often you prefer to meet.";
-      }
-    }
-    if (currentStep === 3) {
-      if (!form.location.trim()) {
-        nextErrors.location = "Enter your city or region.";
-      }
-    }
-    return nextErrors;
-  }
-
-  function goNext() {
-    const nextErrors = validateStep(step);
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length) return;
-    setStep((value) => Math.min(value + 1, STEPS.length));
-  }
-
-  function goBack() {
-    setErrors({});
-    setStep((value) => Math.max(value - 1, 1));
+  function validate(): FormErrors {
+    const next: FormErrors = {};
+    if (!form.goals.length) next.goals = "Select at least one support goal.";
+    if (form.goals.length > MAX_GOALS) next.goals = "Choose up to three.";
+    if (!form.careerStage) next.careerStage = "Select your career stage.";
+    if (!form.format) next.format = "Select a preferred meeting format.";
+    if (!form.frequency) next.frequency = "Select a preferred meeting frequency.";
+    if (!form.location.trim()) next.location = "Enter your location.";
+    return next;
   }
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    const stepErrors = validateStep(3);
-    if (Object.keys(stepErrors).length) {
-      setErrors(stepErrors);
-      return;
-    }
+    const nextErrors = validate();
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) return;
 
     startTransition(async () => {
       const result = await saveMemberPreferences({
-        supportTypes: form.supportTypes,
-        careerStage: form.careerStage as CareerStage,
         goals: form.goals,
+        careerStage: form.careerStage as CareerStage,
         format: form.format as MeetingFormat,
         frequency: form.frequency as MeetingFrequency,
         location: form.location,
         availability: form.availability,
+        includeVirtualOutsideLocation: form.includeVirtualOutsideLocation,
       });
 
       if (!result.ok) {
@@ -166,203 +127,126 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8" noValidate>
-      <ProgressIndicator steps={STEPS} currentStep={step} />
-      <p className="sr-only" aria-live="polite">
-        {progressLabel}
-      </p>
+    <form onSubmit={handleSubmit} className="space-y-12" noValidate>
+      <section className="space-y-5" aria-labelledby="support-goals-title">
+        <div className="flex flex-col gap-3 border-b border-ink pb-4 sm:flex-row sm:items-end sm:justify-between">
+          <h2
+            id="support-goals-title"
+            className="font-display text-3xl text-ink sm:text-4xl"
+          >
+            01 What kind of support are you looking for?
+          </h2>
+          <p className="max-w-sm text-sm text-ink-muted sm:text-right">
+            We use these preferences to rank Circles that fit your goals—not
+            just the most popular ones.
+          </p>
+        </div>
 
-      {step === 1 ? (
-        <section className="space-y-8 animate-fade-in" aria-labelledby="step-1-title">
-          <div className="space-y-3">
-            <h2 id="step-1-title" className="font-serif text-3xl text-ink">
-              What kind of support are you looking for?
-            </h2>
-            <p className="max-w-2xl text-ink-muted">
-              We ask this so we can recommend Circles that feel relevant—not
-              just popular. Your answers stay with your demo profile and shape
-              a transparent match score.
-            </p>
+        <fieldset>
+          <legend className="sr-only">Support goals</legend>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {GOAL_OPTIONS.map((option, index) => (
+              <GoalCard
+                key={option.value}
+                label={option.label}
+                selected={form.goals.includes(option.value)}
+                accentIndex={index}
+                disabled={
+                  isPending ||
+                  (!form.goals.includes(option.value) &&
+                    form.goals.length >= MAX_GOALS)
+                }
+                onToggle={() => toggleGoal(option.value)}
+              />
+            ))}
           </div>
+          <p className="mt-3 text-sm text-ink-muted">Choose up to three.</p>
+          {errors.goals ? (
+            <p
+              id="goals-error"
+              className="mt-2 text-sm font-medium text-error"
+              role="alert"
+            >
+              {errors.goals}
+            </p>
+          ) : null}
+        </fieldset>
+      </section>
 
-          <fieldset className="space-y-3">
-            <legend className="text-sm font-medium text-ink">
-              Support style <span className="text-danger">*</span>
-            </legend>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {SUPPORT_TYPE_OPTIONS.map((option) => (
-                <SelectableCard
-                  key={option.value}
-                  type="checkbox"
-                  title={option.label}
-                  description={option.description}
-                  selected={form.supportTypes.includes(option.value)}
-                  onSelect={() => toggleSupport(option.value)}
-                  disabled={isPending}
-                  value={option.value}
-                />
-              ))}
-            </div>
-            {errors.supportTypes ? (
-              <p className="text-sm text-danger" role="alert">
-                {errors.supportTypes}
-              </p>
-            ) : null}
-          </fieldset>
+      <section className="space-y-6" aria-labelledby="details-title">
+        <h2
+          id="details-title"
+          className="border-b border-ink pb-4 font-display text-3xl text-ink sm:text-4xl"
+        >
+          02 Help us find a Circle that fits your life
+        </h2>
 
-          <fieldset className="space-y-3">
-            <legend className="text-sm font-medium text-ink">
-              Career stage <span className="text-danger">*</span>
-            </legend>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2">
+          <Field id="careerStage" label="Career stage" error={errors.careerStage}>
+            <SelectInput
+              id="careerStage"
+              name="careerStage"
+              value={form.careerStage}
+              error={Boolean(errors.careerStage)}
+              disabled={isPending}
+              aria-invalid={Boolean(errors.careerStage)}
+              aria-describedby={errors.careerStage ? "careerStage-error" : undefined}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  careerStage: event.target.value as CareerStage | "",
+                }))
+              }
+            >
+              <option value="">Select a stage</option>
               {CAREER_STAGE_OPTIONS.map((option) => (
-                <SelectableCard
-                  key={option.value}
-                  type="radio"
-                  name="careerStage"
-                  title={option.label}
-                  selected={form.careerStage === option.value}
-                  onSelect={() =>
-                    setForm((current) => ({
-                      ...current,
-                      careerStage: option.value,
-                    }))
-                  }
-                  disabled={isPending}
-                  value={option.value}
-                />
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
               ))}
-            </div>
-            {errors.careerStage ? (
-              <p className="text-sm text-danger" role="alert">
-                {errors.careerStage}
-              </p>
-            ) : null}
-          </fieldset>
-        </section>
-      ) : null}
-
-      {step === 2 ? (
-        <section className="space-y-8 animate-fade-in" aria-labelledby="step-2-title">
-          <div className="space-y-3">
-            <h2 id="step-2-title" className="font-serif text-3xl text-ink">
-              Topics, goals, and how you want to meet
-            </h2>
-            <p className="max-w-2xl text-ink-muted">
-              Goal overlap carries the most weight in your match score. Format
-              and rhythm help us respect your time and energy.
-            </p>
-          </div>
-
-          <fieldset className="space-y-3">
-            <legend className="text-sm font-medium text-ink">
-              Topics or goals <span className="text-danger">*</span>
-            </legend>
-            <div className="flex flex-wrap gap-2">
-              {GOAL_OPTIONS.map((option) => (
-                <SelectableChip
-                  key={option.value}
-                  label={option.label}
-                  selected={form.goals.includes(option.value)}
-                  onToggle={() => toggleGoal(option.value)}
-                  disabled={isPending}
-                />
-              ))}
-            </div>
-            {errors.goals ? (
-              <p className="text-sm text-danger" role="alert">
-                {errors.goals}
-              </p>
-            ) : null}
-          </fieldset>
-
-          <fieldset className="space-y-3">
-            <legend className="text-sm font-medium text-ink">
-              Meeting format <span className="text-danger">*</span>
-            </legend>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {FORMAT_OPTIONS.map((option) => (
-                <SelectableCard
-                  key={option.value}
-                  type="radio"
-                  name="format"
-                  title={option.label}
-                  description={option.description}
-                  selected={form.format === option.value}
-                  onSelect={() =>
-                    setForm((current) => ({ ...current, format: option.value }))
-                  }
-                  disabled={isPending}
-                  value={option.value}
-                />
-              ))}
-            </div>
-            {errors.format ? (
-              <p className="text-sm text-danger" role="alert">
-                {errors.format}
-              </p>
-            ) : null}
-          </fieldset>
-
-          <fieldset className="space-y-3">
-            <legend className="text-sm font-medium text-ink">
-              Preferred meeting frequency <span className="text-danger">*</span>
-            </legend>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {FREQUENCY_OPTIONS.map((option) => (
-                <SelectableCard
-                  key={option.value}
-                  type="radio"
-                  name="frequency"
-                  title={option.label}
-                  selected={form.frequency === option.value}
-                  onSelect={() =>
-                    setForm((current) => ({
-                      ...current,
-                      frequency: option.value,
-                    }))
-                  }
-                  disabled={isPending}
-                  value={option.value}
-                />
-              ))}
-            </div>
-            {errors.frequency ? (
-              <p className="text-sm text-danger" role="alert">
-                {errors.frequency}
-              </p>
-            ) : null}
-          </fieldset>
-        </section>
-      ) : null}
-
-      {step === 3 ? (
-        <section className="space-y-8 animate-fade-in" aria-labelledby="step-3-title">
-          <div className="space-y-3">
-            <h2 id="step-3-title" className="font-serif text-3xl text-ink">
-              Where should we look?
-            </h2>
-            <p className="max-w-2xl text-ink-muted">
-              Location helps us prioritize nearby in-person Circles while still
-              surfacing strong virtual options.
-            </p>
-          </div>
+            </SelectInput>
+          </Field>
 
           <Field
-            id="location"
-            label="Location"
-            hint='City and region work well—for example, "Chicago, IL" or "Virtual · Global".'
-            error={errors.location}
+            id="frequency"
+            label="Meeting frequency"
+            error={errors.frequency}
           >
+            <SelectInput
+              id="frequency"
+              name="frequency"
+              value={form.frequency}
+              error={Boolean(errors.frequency)}
+              disabled={isPending}
+              aria-invalid={Boolean(errors.frequency)}
+              aria-describedby={errors.frequency ? "frequency-error" : undefined}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  frequency: event.target.value as MeetingFrequency | "",
+                }))
+              }
+            >
+              <option value="">Select frequency</option>
+              {FREQUENCY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </SelectInput>
+          </Field>
+
+          <Field id="location" label="Location" error={errors.location}>
             <TextInput
               id="location"
               name="location"
-              autoComplete="address-level2"
-              placeholder="San Francisco, CA"
+              placeholder="Oakland, CA"
               value={form.location}
               error={Boolean(errors.location)}
               disabled={isPending}
               aria-required="true"
+              aria-invalid={Boolean(errors.location)}
+              aria-describedby={errors.location ? "location-error" : undefined}
               onChange={(event) =>
                 setForm((current) => ({
                   ...current,
@@ -372,59 +256,83 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
             />
           </Field>
 
-          <Field
-            id="availability"
-            label="Availability notes"
-            optional
-            hint="Share days or times that generally work. Circle leaders may use this when reviewing requests."
-          >
-            <TextArea
+          <Field id="availability" label="Availability" optional>
+            <SelectInput
               id="availability"
               name="availability"
-              placeholder="Weekday evenings after 6pm PT, or Friday mornings."
               value={form.availability}
               disabled={isPending}
               onChange={(event) =>
                 setForm((current) => ({
                   ...current,
-                  availability: event.target.value,
+                  availability: event.target.value as AvailabilityWindow | "",
                 }))
               }
-            />
+            >
+              <option value="">Select availability</option>
+              {AVAILABILITY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </SelectInput>
           </Field>
-        </section>
-      ) : null}
+        </div>
+
+        <fieldset className="space-y-3">
+          <legend className="text-sm font-bold uppercase tracking-[0.14em] text-ink">
+            Preferred format <span className="text-error">*</span>
+          </legend>
+          <div className="flex flex-wrap gap-2">
+            {FORMAT_OPTIONS.map((option) => (
+              <RadioPill
+                key={option.value}
+                name="format"
+                label={option.label}
+                value={option.value}
+                checked={form.format === option.value}
+                disabled={isPending}
+                onChange={() =>
+                  setForm((current) => ({ ...current, format: option.value }))
+                }
+              />
+            ))}
+          </div>
+          {errors.format ? (
+            <p className="text-sm font-medium text-error" role="alert">
+              {errors.format}
+            </p>
+          ) : null}
+        </fieldset>
+
+        <label className="flex items-start gap-3 text-sm text-ink">
+          <input
+            type="checkbox"
+            className="mt-1 h-5 w-5 accent-[var(--yellow)]"
+            checked={form.includeVirtualOutsideLocation}
+            disabled={isPending}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                includeVirtualOutsideLocation: event.target.checked,
+              }))
+            }
+          />
+          <span>Include virtual Circles outside my location.</span>
+        </label>
+      </section>
 
       {errors.form ? (
-        <p className="rounded-md border border-danger/20 bg-danger-soft px-4 py-3 text-sm text-danger" role="alert">
+        <p className="border border-error bg-error-soft px-4 py-3 text-sm text-error" role="alert">
           {errors.form}
         </p>
       ) : null}
 
-      <div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-3">
-          {step > 1 ? (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={goBack}
-              disabled={isPending}
-            >
-              Back
-            </Button>
-          ) : null}
-        </div>
-        <div className="flex gap-3">
-          {step < STEPS.length ? (
-            <Button type="button" onClick={goNext} disabled={isPending}>
-              Continue
-            </Button>
-          ) : (
-            <Button type="submit" loading={isPending}>
-              See my Circle matches
-            </Button>
-          )}
-        </div>
+      <div className="flex flex-col gap-4 border-t border-ink pt-6 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-ink-muted">* Required fields</p>
+            <Button type="submit" size="lg" loading={isPending} loadingLabel="Matching…" className="sm:min-w-56">
+          Find my Circles →
+        </Button>
       </div>
     </form>
   );

@@ -1,52 +1,49 @@
 # Circle Match · Lean In Connect
 
-A polished take-home prototype that helps new Lean In Connect members find and request to join the most relevant Lean In Circles.
+A polished editorial prototype that helps new Lean In Connect members find and request to join the most relevant Circles.
 
-This project focuses on the **activation moment** between joining Lean In Connect and finding meaningful community—shortening the distance from “I’m here” to “this Circle feels like mine.”
+Focus: the **activation moment** between joining Lean In Connect and finding meaningful community.
 
 ## Product problem and rationale
 
-Lean In Connect offers many ways to participate, but a new member still has to figure out where she belongs. Circles are intimate by design; browsing a large catalog without guidance can delay that first sense of belonging.
-
-Circle Match asks a few high-signal preference questions, ranks Circles with an explainable score, and lets the member request to join—persisting pending state so the action feels real.
+Lean In Connect offers many ways to participate, but a new member still has to figure out where she belongs. Circle Match asks a few high-signal preference questions, ranks Circles with an explainable score, and lets the member request to join—with persisted pending state.
 
 ## Design decisions
 
-- **Visual continuity with Lean In Connect**: burgundy (`#922A3A`), warm off-white (`#FBF8F6`), near-black ink, soft blush selected states, thin borders, generous spacing.
-- **Editorial typography**: Newsreader for headings, DM Sans for UI/body via `next/font`.
-- **Restrained composition**: spacious layouts rather than floating card grids; the first match is emphasized without diminishing others.
-- **Warm, credible copy**: specific product language instead of placeholders.
-- **Motion**: subtle page enter, modal scale-in, and toast feedback—with `prefers-reduced-motion` support.
+Visual system from the supplied editorial handoff:
 
-## Technical architecture
+- Ink `#171717`, butter yellow `#FFDA57`, warm paper `#F6F2E9`
+- Magenta / lavender / lime for selection and ranking states
+- Plum for editorial statements, error red for validation
+- Condensed display type (Bebas Neue), warm serif (Libre Baskerville), clean product sans (IBM Plex Sans)
+- Organic image crops, oversized outline words, thin black borders, pill controls
 
-- **Next.js App Router** + TypeScript + Tailwind CSS v4
-- **Server Actions** for saving preferences, ranking matches, creating join requests, and reading request status
-- **Matching logic** isolated in `src/lib/matching.ts` (pure, unit-tested)
-- **Data layer** abstracted behind `DataStore`:
-  - Supabase implementation when env vars are present
-  - Labeled in-memory fallback for local review without credentials
-- Seeded **demo profile** (`Amina Okonkwo`) so reviewers can use the flow without auth
+Shared components power all three routes so the experience stays coherent.
 
-### Routes
+## Routes
 
 | Route | Purpose |
 | --- | --- |
-| `/` | Orientation landing |
-| `/match` | Personalized matching form |
-| `/matches` | Ranked Circle recommendations |
-| `/circles/[slug]` | Circle detail + join request modal |
+| `/match` | Preferences form (goals up to 3, stage, format, frequency, location, availability) |
+| `/matches` | Top 3 ranked Circles with featured dark result + filters |
+| `/circles/[slug]` | Circle detail + request-to-join modal |
+
+## Technical architecture
+
+- Next.js App Router + TypeScript + Tailwind CSS v4
+- Server Actions for preferences + ranking
+- `POST /api/circles/[slug]/join-requests` for persisted join requests
+- Demo auth via httpOnly cookie (`circle_match_member`), provisioned in middleware
+- Data layer: Supabase when configured, otherwise labeled in-memory fallback
 
 ## Data model
 
-- **`profiles`**: demo member + JSON preferences
-- **`circles`**: Circle catalog (topics, format, location, schedule, leader, members)
-- **`join_requests`**: unique `(profile_id, circle_id)` pending/approved/declined requests
+- `profiles` — demo member + JSON preferences
+- `circles` — catalog with topics, format, next meeting, imagery, weeknight flag
+- `join_requests` — unique `(profile_id, circle_id)` with status + timestamps
 
-Schema + seed live in:
-
-- `supabase/migrations/001_circle_match_schema.sql`
-- `supabase/seed.sql`
+Schema: `supabase/migrations/001_circle_match_schema.sql`  
+Seed: `supabase/seed.sql` (includes Bay Area Leadership Lab, Women Building in Tech, Founders in Progress)
 
 ## Matching approach
 
@@ -54,98 +51,34 @@ Deterministic weighted score:
 
 | Signal | Weight |
 | --- | ---: |
-| Goal / topic overlap | 45% |
-| Format preference | 20% |
+| Goal / topic overlap | 40% |
+| Format preference | 15% |
 | Location compatibility | 15% |
 | Meeting frequency | 10% |
 | Career stage | 10% |
+| Availability | 10% |
 
-The server returns both the numeric score and human-readable reasons. Rankings are stable for identical inputs.
+`includeVirtualOutsideLocation` affects virtual Circle location scoring. Server returns percentage + human-readable reasons.
 
 ## What is real versus mocked
 
-**Real**
+**Real:** preference persistence, server ranking, join-request API with duplicate protection, pending CTA after refresh, validation/loading/empty/error/success states.
 
-- Preference persistence (Supabase or in-memory)
-- Server-side ranking
-- Join request create + duplicate protection
-- Pending CTA / confirmation after refresh (within the active data store)
-- Validation, loading, empty, error, and success states
+**Mocked / deferred:** full auth provider, leader approval inbox, email notifications. Demo profile is auto-authenticated for reviewers.
 
-**Mocked / deferred**
+## Accessibility
 
-- Authentication (demo profile only; data layer is structured for future auth)
-- Circle leader approval workflow
-- Notifications / email
-- Production analytics
-
-If Supabase env vars are missing, a **visible banner** indicates the in-memory development fallback. The Supabase implementation remains complete and is used automatically when configured.
-
-## Accessibility considerations
-
-- Semantic headings, fieldsets/legends, labels
-- Keyboard-operable chips, cards, and modal
-- Focus trap + focus restoration in the join modal
-- Visible `:focus-visible` rings
-- WCAG AA-oriented contrast on core text/actions
-- `prefers-reduced-motion` disables non-essential animation
-- Skip link, comfortable touch targets, no intentional horizontal overflow
-
-## Tradeoffs made for the time limit
-
-- Demo profile instead of full auth
-- CSS visual treatments for Circles instead of a full image CMS
-- Lightweight format filtering on matches (not a full search stack)
-- RLS policies kept permissive for the prototype; tighten with auth later
-
-## What I would build next
-
-1. Real authentication and per-user preferences
-2. Circle leader inbox for approving/declining requests
-3. Preference versioning and “match explanation” analytics
-4. Richer location/geocoding for metro-area matching
-5. Saved Circles + post-join onboarding checklist
+Semantic fieldsets/labels, visible focus rings, non-color selection cues, `aria-describedby` errors, modal focus trap + Escape + restoration, `aria-live` for filter changes, WCAG AA-oriented contrast, `prefers-reduced-motion`.
 
 ## Local setup
 
-### 1. Install
-
 ```bash
 npm install
-```
-
-### 2. Environment
-
-Copy `.env.example` to `.env.local` and fill in values when using Supabase:
-
-```bash
-cp .env.example .env.local
-```
-
-Required for Supabase:
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY` (optional but recommended for server writes)
-
-Without these, the app runs on the labeled in-memory store.
-
-### 3. Database (Supabase)
-
-In the Supabase SQL editor (or CLI), run:
-
-1. `supabase/migrations/001_circle_match_schema.sql`
-2. `supabase/seed.sql`
-
-### 4. Develop
-
-```bash
+cp .env.example .env.local   # optional Supabase
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
-
-### 5. Quality checks
+Quality checks:
 
 ```bash
 npm run lint
@@ -154,12 +87,8 @@ npm test
 npm run build
 ```
 
-## Deployment
+## Assumptions
 
-Deploy as a standard Next.js app (Vercel recommended):
-
-1. Set the environment variables above
-2. Apply the SQL migration + seed to your Supabase project
-3. Deploy the repository
-
-The production build does not require Supabase at build time; configure env vars in the host before runtime use.
+1. Handoff asset folder images were not present in the workspace; editorial photography uses optimized local Unsplash-sourced assets under `public/assets/`.
+2. Demo cookie auth stands in for a real authenticated member while keeping the API auth-gated.
+3. Filters on `/matches` refine the already server-ranked top results client-side without discarding saved preferences.

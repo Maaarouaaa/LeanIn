@@ -49,13 +49,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={toast.id}
             className={cn(
-              "pointer-events-auto max-w-md rounded-md border px-4 py-3 text-sm shadow-[var(--shadow-soft)] animate-scale-in",
+              "pointer-events-auto max-w-md border px-4 py-3 text-sm shadow-[var(--shadow-soft)] animate-scale-in",
               toast.tone === "success" &&
-                "border-success/20 bg-success-soft text-success",
-              toast.tone === "error" &&
-                "border-danger/20 bg-danger-soft text-danger",
-              toast.tone === "info" &&
-                "border-border bg-surface text-ink",
+                "border-success bg-success-soft text-success",
+              toast.tone === "error" && "border-error bg-error-soft text-error",
+              toast.tone === "info" && "border-ink bg-yellow text-ink",
             )}
             role="status"
           >

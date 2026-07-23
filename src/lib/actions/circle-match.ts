@@ -1,6 +1,7 @@
 "use server";
 
-import { DEMO_PROFILE_ID } from "@/lib/constants";
+import { requireAuthenticatedMember } from "@/lib/auth";
+import { MAX_GOALS, MAX_NOTE_LENGTH } from "@/lib/constants";
 import { rankCircleMatches } from "@/lib/matching";
 import { getDataStore } from "@/lib/data/store";
 import {
@@ -20,24 +21,12 @@ export type ActionResult<T> =
   | { ok: false; error: string; code?: string };
 
 function validatePreferences(input: MatchFormInput): string | null {
-  if (!input.supportTypes.length) {
-    return "Select at least one kind of support.";
-  }
-  if (!input.careerStage) {
-    return "Select your career stage.";
-  }
-  if (!input.goals.length) {
-    return "Select at least one topic or goal.";
-  }
-  if (!input.format) {
-    return "Select a meeting format preference.";
-  }
-  if (!input.frequency) {
-    return "Select a preferred meeting frequency.";
-  }
-  if (!input.location.trim()) {
-    return "Enter your location.";
-  }
+  if (!input.goals.length) return "Select at least one support goal.";
+  if (input.goals.length > MAX_GOALS) return "Choose up to three goals.";
+  if (!input.careerStage) return "Select your career stage.";
+  if (!input.format) return "Select a preferred meeting format.";
+  if (!input.frequency) return "Select a preferred meeting frequency.";
+  if (!input.location.trim()) return "Enter your location.";
   return null;
 }
 
@@ -45,14 +34,13 @@ export async function saveMemberPreferences(
   input: MatchFormInput,
 ): Promise<ActionResult<{ profile: Profile; mode: "supabase" | "memory" }>> {
   const validationError = validatePreferences(input);
-  if (validationError) {
-    return { ok: false, error: validationError };
-  }
+  if (validationError) return { ok: false, error: validationError };
 
   try {
+    const memberId = await requireAuthenticatedMember();
     const store = getDataStore();
     const preferences = preferencesFromInput(input);
-    const profile = await store.savePreferences(DEMO_PROFILE_ID, preferences);
+    const profile = await store.savePreferences(memberId, preferences);
     return { ok: true, data: { profile, mode: store.mode } };
   } catch (error) {
     return {
@@ -73,6 +61,7 @@ export async function getMemberPreferences(): Promise<
   }>
 > {
   try {
+    await requireAuthenticatedMember();
     const store = getDataStore();
     const profile = await store.getDemoProfile();
     return {
@@ -96,21 +85,28 @@ export async function getMemberPreferences(): Promise<
 
 export async function getRankedMatches(filters?: {
   format?: string;
-  minScore?: number;
+  weeknights?: boolean;
 }): Promise<
   ActionResult<{
     matches: CircleMatch[];
+    allMatches: CircleMatch[];
     preferences: MemberPreferences | null;
     mode: "supabase" | "memory";
   }>
 > {
   try {
+    await requireAuthenticatedMember();
     const store = getDataStore();
     const profile = await store.getDemoProfile();
     if (!profile.preferences) {
       return {
         ok: true,
-        data: { matches: [], preferences: null, mode: store.mode },
+        data: {
+          matches: [],
+          allMatches: [],
+          preferences: null,
+          mode: store.mode,
+        },
       };
     }
 
@@ -120,6 +116,7 @@ export async function getRankedMatches(filters?: {
         ok: true,
         data: {
           matches: [],
+          allMatches: [],
           preferences: profile.preferences,
           mode: store.mode,
         },
@@ -127,74 +124,38 @@ export async function getRankedMatches(filters?: {
     }
 
     const circles = await store.listCircles();
-    let matches = rankCircleMatches(input, circles);
+    let ranked = rankCircleMatches(input, circles);
 
     if (filters?.format && filters.format !== "all") {
-      matches = matches.filter(
-        (match) =>
-          match.circle.format === filters.format ||
-          (filters.format === "hybrid" && match.circle.format === "hybrid"),
-      );
+      ranked = ranked.filter((match) => {
+        if (filters.format === "virtual") {
+          return (
+            match.circle.format === "virtual" ||
+            match.circle.format === "hybrid"
+          );
+        }
+        if (filters.format === "in-person") {
+          return (
+            match.circle.format === "in-person" ||
+            match.circle.format === "hybrid"
+          );
+        }
+        return true;
+      });
     }
 
-    if (typeof filters?.minScore === "number") {
-      matches = matches.filter((match) => match.score >= filters.minScore!);
+    if (filters?.weeknights) {
+      ranked = ranked.filter((match) => match.circle.meetsWeeknights);
     }
 
     return {
       ok: true,
       data: {
-        matches: matches.slice(0, 3),
+        matches: ranked.slice(0, 3),
+        allMatches: ranked,
         preferences: profile.preferences,
         mode: store.mode,
       },
-    };
-  } catch (error) {
-    return {
-      ok: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Unable to load Circle matches.",
-    };
-  }
-}
-
-export async function getAllRankedMatches(): Promise<
-  ActionResult<{
-    matches: CircleMatch[];
-    preferences: MemberPreferences | null;
-    mode: "supabase" | "memory";
-  }>
-> {
-  try {
-    const store = getDataStore();
-    const profile = await store.getDemoProfile();
-    if (!profile.preferences) {
-      return {
-        ok: true,
-        data: { matches: [], preferences: null, mode: store.mode },
-      };
-    }
-
-    const input = inputFromPreferences(profile.preferences);
-    if (!input) {
-      return {
-        ok: true,
-        data: {
-          matches: [],
-          preferences: profile.preferences,
-          mode: store.mode,
-        },
-      };
-    }
-
-    const circles = await store.listCircles();
-    const matches = rankCircleMatches(input, circles);
-
-    return {
-      ok: true,
-      data: { matches, preferences: profile.preferences, mode: store.mode },
     };
   } catch (error) {
     return {
@@ -211,14 +172,19 @@ export async function createJoinRequestAction(input: {
   circleId: string;
   note?: string;
 }): Promise<ActionResult<{ request: JoinRequest; mode: "supabase" | "memory" }>> {
-  if (!input.circleId) {
-    return { ok: false, error: "Circle is required." };
+  if (!input.circleId) return { ok: false, error: "Circle is required." };
+  if ((input.note?.length ?? 0) > MAX_NOTE_LENGTH) {
+    return {
+      ok: false,
+      error: `Notes must be ${MAX_NOTE_LENGTH} characters or fewer.`,
+    };
   }
 
   try {
+    const memberId = await requireAuthenticatedMember();
     const store = getDataStore();
-    const existing = await store.getJoinRequest(DEMO_PROFILE_ID, input.circleId);
-    if (existing) {
+    const existing = await store.getJoinRequest(memberId, input.circleId);
+    if (existing && existing.status === "pending") {
       return {
         ok: false,
         error: "You already have a request for this Circle.",
@@ -227,7 +193,7 @@ export async function createJoinRequestAction(input: {
     }
 
     const request = await store.createJoinRequest({
-      profileId: DEMO_PROFILE_ID,
+      profileId: memberId,
       circleId: input.circleId,
       note: input.note,
     });
@@ -256,8 +222,9 @@ export async function getJoinRequestStatus(
   ActionResult<{ request: JoinRequest | null; mode: "supabase" | "memory" }>
 > {
   try {
+    const memberId = await requireAuthenticatedMember();
     const store = getDataStore();
-    const request = await store.getJoinRequest(DEMO_PROFILE_ID, circleId);
+    const request = await store.getJoinRequest(memberId, circleId);
     return { ok: true, data: { request, mode: store.mode } };
   } catch (error) {
     return {
@@ -272,16 +239,26 @@ export async function getJoinRequestStatus(
 
 export async function getCircleBySlugAction(slug: string) {
   try {
+    const memberId = await requireAuthenticatedMember();
     const store = getDataStore();
     const circle = await store.getCircleBySlug(slug);
     if (!circle) {
       return { ok: false as const, error: "Circle not found." };
     }
 
-    const request = await store.getJoinRequest(DEMO_PROFILE_ID, circle.id);
+    const request = await store.getJoinRequest(memberId, circle.id);
+    const profile = await store.getDemoProfile();
+    let match: CircleMatch | null = null;
+    if (profile.preferences) {
+      const input = inputFromPreferences(profile.preferences);
+      if (input) {
+        match = rankCircleMatches(input, [circle])[0] ?? null;
+      }
+    }
+
     return {
       ok: true as const,
-      data: { circle, request, mode: store.mode },
+      data: { circle, request, match, mode: store.mode },
     };
   } catch (error) {
     return {

@@ -12,7 +12,6 @@ import type {
   MeetingFrequency,
   MemberPreferences,
   Profile,
-  SupportType,
 } from "@/lib/types";
 
 interface ProfileRow {
@@ -32,14 +31,16 @@ interface CircleRow {
   description: string;
   who_its_for: string;
   topics: Goal[];
-  support_types: SupportType[];
   career_stages: CareerStage[];
   format: Exclude<MeetingFormat, "either">;
   frequency: MeetingFrequency;
   location: string;
   schedule: string;
+  next_meeting: string;
   member_count: number;
-  image_tone: Circle["imageTone"];
+  image_src: string;
+  image_alt: string;
+  meets_weeknights: boolean;
   leader: CircleLeader;
   members: CircleMemberPreview[];
   created_at: string;
@@ -52,6 +53,7 @@ interface JoinRequestRow {
   note: string | null;
   status: JoinRequest["status"];
   created_at: string;
+  updated_at: string;
 }
 
 function mapProfile(row: ProfileRow): Profile {
@@ -74,14 +76,16 @@ function mapCircle(row: CircleRow): Circle {
     description: row.description,
     whoItsFor: row.who_its_for,
     topics: row.topics,
-    supportTypes: row.support_types,
     careerStages: row.career_stages,
     format: row.format,
     frequency: row.frequency,
     location: row.location,
     schedule: row.schedule,
+    nextMeeting: row.next_meeting,
     memberCount: row.member_count,
-    imageTone: row.image_tone,
+    imageSrc: row.image_src,
+    imageAlt: row.image_alt,
+    meetsWeeknights: row.meets_weeknights,
     leader: row.leader,
     members: row.members,
     createdAt: row.created_at,
@@ -96,6 +100,7 @@ function mapJoinRequest(row: JoinRequestRow): JoinRequest {
     note: row.note,
     status: row.status,
     createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
@@ -109,7 +114,6 @@ export const supabaseStore: DataStore = {
       .select("*")
       .eq("id", DEMO_PROFILE_ID)
       .single();
-
     if (error) throw error;
     return mapProfile(data as ProfileRow);
   },
@@ -125,7 +129,6 @@ export const supabaseStore: DataStore = {
       .eq("id", profileId)
       .select("*")
       .single();
-
     if (error) throw error;
     return mapProfile(data as ProfileRow);
   },
@@ -136,7 +139,6 @@ export const supabaseStore: DataStore = {
       .from("circles")
       .select("*")
       .order("name", { ascending: true });
-
     if (error) throw error;
     return (data as CircleRow[]).map(mapCircle);
   },
@@ -148,7 +150,6 @@ export const supabaseStore: DataStore = {
       .select("*")
       .eq("slug", slug)
       .maybeSingle();
-
     if (error) throw error;
     return data ? mapCircle(data as CircleRow) : null;
   },
@@ -160,13 +161,13 @@ export const supabaseStore: DataStore = {
       .select("*")
       .eq("id", id)
       .maybeSingle();
-
     if (error) throw error;
     return data ? mapCircle(data as CircleRow) : null;
   },
 
   async createJoinRequest({ profileId, circleId, note }) {
     const supabase = getSupabaseAdmin();
+    const timestamp = new Date().toISOString();
     const { data, error } = await supabase
       .from("join_requests")
       .insert({
@@ -174,6 +175,7 @@ export const supabaseStore: DataStore = {
         circle_id: circleId,
         note: note?.trim() ? note.trim() : null,
         status: "pending",
+        updated_at: timestamp,
       })
       .select("*")
       .single();
@@ -200,7 +202,6 @@ export const supabaseStore: DataStore = {
       .eq("profile_id", profileId)
       .eq("circle_id", circleId)
       .maybeSingle();
-
     if (error) throw error;
     return data ? mapJoinRequest(data as JoinRequestRow) : null;
   },
@@ -212,7 +213,6 @@ export const supabaseStore: DataStore = {
       .select("*")
       .eq("profile_id", profileId)
       .order("created_at", { ascending: false });
-
     if (error) throw error;
     return (data as JoinRequestRow[]).map(mapJoinRequest);
   },

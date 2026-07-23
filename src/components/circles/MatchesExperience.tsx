@@ -1,38 +1,54 @@
 "use client";
 
-import { CircleCard } from "@/components/circles/CircleCard";
+import {
+  FeaturedMatchCard,
+  SecondaryMatchCard,
+} from "@/components/circles/MatchCards";
 import { Button } from "@/components/ui/Button";
+import { FilterPill } from "@/components/ui/SelectableControls";
 import type { CircleMatch, MemberPreferences } from "@/lib/types";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+type FilterValue = "all" | "virtual" | "in-person" | "weeknights";
+
 interface MatchesExperienceProps {
   matches: CircleMatch[];
-  allMatches: CircleMatch[];
   preferences: MemberPreferences | null;
+  error?: string | null;
 }
 
 export function MatchesExperience({
   matches,
-  allMatches,
   preferences,
+  error,
 }: MatchesExperienceProps) {
-  const [formatFilter, setFormatFilter] = useState<string>("all");
-  const [showMore, setShowMore] = useState(false);
+  const [filter, setFilter] = useState<FilterValue>("all");
 
   const filtered = useMemo(() => {
-    const source = showMore ? allMatches : matches;
-    if (formatFilter === "all") return source;
-    return source.filter((match) => match.circle.format === formatFilter);
-  }, [allMatches, formatFilter, matches, showMore]);
+    return matches.filter((match) => {
+      if (filter === "virtual") {
+        return (
+          match.circle.format === "virtual" || match.circle.format === "hybrid"
+        );
+      }
+      if (filter === "in-person") {
+        return (
+          match.circle.format === "in-person" ||
+          match.circle.format === "hybrid"
+        );
+      }
+      if (filter === "weeknights") return match.circle.meetsWeeknights;
+      return true;
+    });
+  }, [filter, matches]);
 
   if (!preferences) {
     return (
-      <div className="rounded-xl border border-border bg-surface px-6 py-10 text-center">
-        <h2 className="font-serif text-3xl text-ink">Start with your preferences</h2>
+      <div className="border border-ink bg-surface px-6 py-12 text-center">
+        <h2 className="font-display text-4xl text-ink">Start with preferences</h2>
         <p className="mx-auto mt-3 max-w-lg text-ink-muted">
-          Circle Match needs a few details about the support you want before it
-          can recommend Circles.
+          Tell us what support you need so we can rank Circles that fit.
         </p>
         <Link href="/match" className="mt-6 inline-block">
           <Button>Begin Circle Match</Button>
@@ -41,20 +57,37 @@ export function MatchesExperience({
     );
   }
 
+  if (error) {
+    return (
+      <div className="border border-error bg-error-soft px-6 py-10 text-error" role="alert">
+        <h2 className="font-display text-3xl">Unable to load matches</h2>
+        <p className="mt-2 text-sm">{error}</p>
+        <Link href="/matches" className="mt-6 inline-block">
+          <Button variant="secondary">Retry</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const announcement =
+    filtered.length === 0
+      ? "No Circles match this filter."
+      : `Showing ${filtered.length} Circle${filtered.length === 1 ? "" : "s"}.`;
+
   if (!filtered.length) {
     return (
       <div className="space-y-6">
-        <FilterBar
-          formatFilter={formatFilter}
-          setFormatFilter={setFormatFilter}
-        />
-        <div className="rounded-xl border border-border bg-surface px-6 py-10 text-center">
-          <h2 className="font-serif text-3xl text-ink">No Circles for this filter</h2>
+        <FilterBar filter={filter} setFilter={setFilter} />
+        <p className="sr-only" aria-live="polite">
+          {announcement}
+        </p>
+        <div className="border border-ink bg-surface px-6 py-12 text-center">
+          <h2 className="font-display text-4xl text-ink">No Circles for this filter</h2>
           <p className="mx-auto mt-3 max-w-lg text-ink-muted">
-            Try another format, or edit your preferences to widen the match.
+            Try another filter, or edit your preferences to widen the match.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Button variant="secondary" onClick={() => setFormatFilter("all")}>
+            <Button variant="secondary" onClick={() => setFilter("all")}>
               Clear filter
             </Button>
             <Link href="/match">
@@ -66,71 +99,63 @@ export function MatchesExperience({
     );
   }
 
-  const [featured, ...rest] = filtered;
+  const [featured, second, third] = filtered;
 
   return (
     <div className="space-y-8">
-      <FilterBar formatFilter={formatFilter} setFormatFilter={setFormatFilter} />
+      <FilterBar filter={filter} setFilter={setFilter} />
+      <p className="sr-only" aria-live="polite">
+        {announcement}
+      </p>
 
-      <div className="space-y-6">
-        {featured ? <CircleCard match={featured} featured /> : null}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {rest.map((match) => (
-            <CircleCard key={match.circle.id} match={match} />
-          ))}
-        </div>
+      {featured ? <FeaturedMatchCard match={featured} /> : null}
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        {second ? (
+          <SecondaryMatchCard match={second} tone="lavender" />
+        ) : null}
+        {third ? <SecondaryMatchCard match={third} tone="lime" /> : null}
       </div>
-
-      {!showMore && allMatches.length > matches.length ? (
-        <div className="text-center">
-          <Button variant="secondary" onClick={() => setShowMore(true)}>
-            Show additional Circles
-          </Button>
-        </div>
-      ) : null}
     </div>
   );
 }
 
 function FilterBar({
-  formatFilter,
-  setFormatFilter,
+  filter,
+  setFilter,
 }: {
-  formatFilter: string;
-  setFormatFilter: (value: string) => void;
+  filter: FilterValue;
+  setFilter: (value: FilterValue) => void;
 }) {
-  const options = [
-    { value: "all", label: "All formats" },
+  const options: { value: FilterValue; label: string }[] = [
+    { value: "all", label: "All three" },
     { value: "virtual", label: "Virtual" },
     { value: "in-person", label: "In person" },
-    { value: "hybrid", label: "Hybrid" },
+    { value: "weeknights", label: "Weeknights" },
   ];
 
   return (
-    <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by format">
-        {options.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => setFormatFilter(option.value)}
-            className={
-              formatFilter === option.value
-                ? "min-h-10 rounded-full border border-burgundy bg-burgundy-soft px-4 text-sm text-burgundy"
-                : "min-h-10 rounded-full border border-border-strong bg-surface px-4 text-sm text-ink-muted hover:border-burgundy/40"
-            }
-            aria-pressed={formatFilter === option.value}
-          >
-            {option.label}
-          </button>
-        ))}
+    <div className="flex flex-col gap-4 border-b border-ink pb-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="space-y-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink">
+          Filter results
+        </p>
+        <div
+          className="flex gap-2 overflow-x-auto pb-1"
+          role="group"
+          aria-label="Filter matches"
+        >
+          {options.map((option) => (
+            <FilterPill
+              key={option.value}
+              label={option.label}
+              pressed={filter === option.value}
+              onClick={() => setFilter(option.value)}
+            />
+          ))}
+        </div>
       </div>
-      <Link
-        href="/match"
-        className="text-sm font-medium text-burgundy underline-offset-4 hover:underline"
-      >
-        Edit preferences
-      </Link>
+      <p className="text-sm text-ink-muted">Ranked by your saved preferences</p>
     </div>
   );
 }

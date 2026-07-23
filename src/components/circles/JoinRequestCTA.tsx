@@ -2,7 +2,7 @@
 
 import { JoinRequestModal } from "@/components/circles/JoinRequestModal";
 import { Button } from "@/components/ui/Button";
-import { StatusBadge } from "@/components/ui/StatusBadge";
+import { StatusBanner } from "@/components/ui/People";
 import type { Circle, JoinRequest } from "@/lib/types";
 import { useState } from "react";
 
@@ -17,7 +17,6 @@ export function JoinRequestCTA({
 }: JoinRequestCTAProps) {
   const [request, setRequest] = useState<JoinRequest | null>(initialRequest);
   const [open, setOpen] = useState(false);
-
   const isPending = request?.status === "pending";
 
   return (
@@ -25,30 +24,22 @@ export function JoinRequestCTA({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         {isPending ? (
           <Button disabled className="w-full sm:w-auto">
-            Request pending
+            Request sent
           </Button>
         ) : (
           <Button className="w-full sm:w-auto" onClick={() => setOpen(true)}>
-            Request to join
+            Request to join →
           </Button>
         )}
-        {isPending ? (
-          <StatusBadge tone="success">Awaiting Circle leader review</StatusBadge>
-        ) : null}
       </div>
 
       {isPending ? (
-        <div
-          className="rounded-lg border border-success/20 bg-success-soft px-4 py-4 text-sm text-success animate-fade-in"
-          role="status"
-        >
-          <p className="font-medium">Your request has been sent.</p>
-          <p className="mt-1 text-success/90">
-            Next steps: {circle.leader.name} will review your request. You can
-            continue exploring other Circles meanwhile—duplicate requests for
-            this Circle are blocked.
+        <StatusBanner tone="success" title="Your request has been sent.">
+          <p>
+            Next steps: {circle.leader.name} will review your request. Duplicate
+            requests for this Circle are blocked.
           </p>
-        </div>
+        </StatusBanner>
       ) : null}
 
       <JoinRequestModal

@@ -1,10 +1,3 @@
-export type SupportType =
-  | "peer-support"
-  | "skill-building"
-  | "accountability"
-  | "networking"
-  | "leadership-growth";
-
 export type CareerStage =
   | "early-career"
   | "mid-career"
@@ -33,14 +26,22 @@ export type Goal =
 
 export type JoinRequestStatus = "pending" | "approved" | "declined";
 
+export type AvailabilityWindow =
+  | "weekday-mornings"
+  | "weekday-afternoons"
+  | "weekday-evenings"
+  | "weeknights"
+  | "weekends"
+  | "flexible";
+
 export interface MemberPreferences {
-  supportTypes: SupportType[];
-  careerStage: CareerStage | null;
   goals: Goal[];
+  careerStage: CareerStage | null;
   format: MeetingFormat | null;
   frequency: MeetingFrequency | null;
   location: string;
-  availability: string;
+  availability: AvailabilityWindow | "";
+  includeVirtualOutsideLocation: boolean;
 }
 
 export interface Profile {
@@ -63,6 +64,7 @@ export interface CircleLeader {
   title: string;
   bio: string;
   initials: string;
+  since?: string;
 }
 
 export interface Circle {
@@ -73,14 +75,16 @@ export interface Circle {
   description: string;
   whoItsFor: string;
   topics: Goal[];
-  supportTypes: SupportType[];
   careerStages: CareerStage[];
   format: Exclude<MeetingFormat, "either">;
   frequency: MeetingFrequency;
   location: string;
   schedule: string;
+  nextMeeting: string;
   memberCount: number;
-  imageTone: "burgundy" | "blush" | "sage" | "sand" | "slate" | "rose";
+  imageSrc: string;
+  imageAlt: string;
+  meetsWeeknights: boolean;
   leader: CircleLeader;
   members: CircleMemberPreview[];
   createdAt: string;
@@ -93,6 +97,7 @@ export interface JoinRequest {
   note: string | null;
   status: JoinRequestStatus;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface MatchReason {
@@ -108,11 +113,11 @@ export interface CircleMatch {
 }
 
 export interface MatchFormInput {
-  supportTypes: SupportType[];
-  careerStage: CareerStage;
   goals: Goal[];
+  careerStage: CareerStage;
   format: MeetingFormat;
   frequency: MeetingFrequency;
   location: string;
-  availability?: string;
+  availability?: AvailabilityWindow | "";
+  includeVirtualOutsideLocation: boolean;
 }

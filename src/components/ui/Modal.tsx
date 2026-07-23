@@ -18,6 +18,7 @@ interface ModalProps {
   children: ReactNode;
   footer?: ReactNode;
   className?: string;
+  labelledByExtra?: string;
 }
 
 export function Modal({
@@ -42,7 +43,6 @@ export function Modal({
         onClose();
         return;
       }
-
       if (event.key !== "Tab" || !dialogRef.current) return;
 
       const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
@@ -50,7 +50,6 @@ export function Modal({
       );
       const elements = Array.from(focusable);
       if (!elements.length) return;
-
       const first = elements[0];
       const last = elements[elements.length - 1];
 
@@ -67,7 +66,6 @@ export function Modal({
 
   useEffect(() => {
     if (!open) return;
-
     previouslyFocused.current = document.activeElement as HTMLElement | null;
     document.addEventListener("keydown", handleKeyDown);
     const previousOverflow = document.body.style.overflow;
@@ -92,11 +90,11 @@ export function Modal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
       <button
         type="button"
         aria-label="Close dialog"
-        className="absolute inset-0 bg-ink/40 animate-fade-in"
+        className="absolute inset-0 bg-ink/45 animate-fade-in"
         onClick={onClose}
       />
       <div
@@ -107,13 +105,16 @@ export function Modal({
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
         className={cn(
-          "relative z-10 w-full max-w-lg rounded-xl border border-border bg-surface p-6 shadow-[var(--shadow-soft)] animate-scale-in",
+          "relative z-10 flex max-h-[94vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-3xl border border-ink bg-[linear-gradient(180deg,#efe8f8_0%,#ffffff_42%)] shadow-[var(--shadow-soft)] animate-scale-in sm:rounded-3xl",
           className,
         )}
       >
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-4 border-b border-ink/15 px-5 py-5 sm:px-7">
           <div className="space-y-2">
-            <h2 id={titleId} className="font-serif text-2xl text-ink">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-ink">
+              Request to join
+            </p>
+            <h2 id={titleId} className="font-display text-3xl leading-none text-ink sm:text-4xl">
               {title}
             </h2>
             {description ? (
@@ -129,11 +130,15 @@ export function Modal({
             aria-label="Close"
             className="!min-h-10 !px-3"
           >
-            Close
+            ✕
           </Button>
         </div>
-        <div className="mt-5">{children}</div>
-        {footer ? <div className="mt-6 flex flex-wrap gap-3">{footer}</div> : null}
+        <div className="overflow-y-auto px-5 py-5 sm:px-7">{children}</div>
+        {footer ? (
+          <div className="border-t border-ink/15 px-5 py-4 sm:px-7">
+            {footer}
+          </div>
+        ) : null}
       </div>
     </div>
   );

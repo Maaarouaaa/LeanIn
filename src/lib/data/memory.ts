@@ -70,7 +70,9 @@ export const memoryStore: DataStore = {
     const state = getState();
     const existing = state.joinRequests.find(
       (request) =>
-        request.profileId === profileId && request.circleId === circleId,
+        request.profileId === profileId &&
+        request.circleId === circleId &&
+        request.status === "pending",
     );
     if (existing) {
       const error = new Error("A join request for this Circle already exists.");
@@ -83,13 +85,15 @@ export const memoryStore: DataStore = {
       throw new Error("Circle not found");
     }
 
+    const timestamp = nowIso();
     const request: JoinRequest = {
       id: crypto.randomUUID(),
       profileId,
       circleId,
       note: note?.trim() ? note.trim() : null,
       status: "pending",
-      createdAt: nowIso(),
+      createdAt: timestamp,
+      updatedAt: timestamp,
     };
     state.joinRequests.push(request);
     return structuredClone(request);
@@ -108,3 +112,8 @@ export const memoryStore: DataStore = {
     );
   },
 };
+
+/** Test helper */
+export function resetMemoryStore() {
+  globalThis.__circleMatchMemory = undefined;
+}
