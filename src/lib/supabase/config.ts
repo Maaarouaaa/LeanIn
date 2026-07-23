@@ -1,17 +1,28 @@
+/**
+ * Runtime env helpers for Supabase.
+ * Read through process.env at call time (not module init) so `next dev`
+ * picks up `.env.local` after restart.
+ */
+
+function readEnv(name: string): string | undefined {
+  const value = process.env[name];
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
 export function hasSupabaseConfig(): boolean {
   return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim(),
+    readEnv("NEXT_PUBLIC_SUPABASE_URL") &&
+      readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
   );
 }
 
 export function getSupabaseConfig() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
-  // Support both legacy service-role naming and newer secret key naming.
+  const url = readEnv("NEXT_PUBLIC_SUPABASE_URL");
+  const anonKey = readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
   const serviceRoleKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
-    process.env.SUPABASE_SECRET_KEY?.trim();
+    readEnv("SUPABASE_SERVICE_ROLE_KEY") || readEnv("SUPABASE_SECRET_KEY");
 
   if (!url || !anonKey) {
     return null;

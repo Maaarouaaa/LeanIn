@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Bebas_Neue, Libre_Baskerville, IBM_Plex_Sans } from "next/font/google";
+import { connection } from "next/server";
 import { Masthead } from "@/components/layout/Masthead";
 import { ToastProvider } from "@/components/ui/Toast";
 import { getDataMode } from "@/lib/data/store";
@@ -43,6 +44,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Ensure request-time rendering so data mode reflects current env.
+  await connection();
   const dataMode = getDataMode();
 
   return (

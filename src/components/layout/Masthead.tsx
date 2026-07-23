@@ -11,6 +11,12 @@ const NAV_ITEMS = [
   { href: "/#community", label: "Community" },
 ];
 
+function hasPublicSupabaseEnv() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  return Boolean(url && anonKey);
+}
+
 export function Masthead({
   dataMode,
 }: {
@@ -18,10 +24,12 @@ export function Masthead({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  // Prefer live public env so a stale server prop cannot keep the fallback banner stuck.
+  const showFallbackBanner = dataMode === "memory" && !hasPublicSupabaseEnv();
 
   return (
     <header className="border-b border-ink bg-paper">
-      {dataMode === "memory" ? (
+      {showFallbackBanner ? (
         <div
           className="border-b border-ink/20 bg-lavender/40 px-4 py-2 text-center text-xs text-ink-soft"
           role="status"
