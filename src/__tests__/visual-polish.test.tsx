@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { flowStepFromPathname } from "@/components/ui/FlowProgress";
 import { ViewCircleLink } from "@/components/circles/ViewCircleLink";
 import { LeaderProfile } from "@/components/ui/People";
+import { EditorialHero } from "@/components/ui/EditorialHero";
 import { EditorialImageFrame } from "@/components/ui/EditorialImageFrame";
 import { SEED_CIRCLES } from "@/lib/data/seed";
 
@@ -43,22 +44,62 @@ describe("ViewCircleLink", () => {
   });
 });
 
+describe("EditorialHero split", () => {
+  afterEach(() => cleanup());
+
+  it("uses a rectangular photo with an angular yellow overlap instead of a blob", () => {
+    const { container } = render(
+      <EditorialHero
+        tone="split"
+        title="Find your people."
+        imageSrc="/assets/heroes/hero-match.jpg"
+        imageAlt="Community gathering"
+        badge="About 3 minutes"
+      />,
+    );
+
+    const hero = container.querySelector(
+      '[data-editorial-hero="split"]',
+    ) as HTMLElement | null;
+    expect(hero).not.toBeNull();
+
+    const photo = container.querySelector(
+      "[data-hero-photo]",
+    ) as HTMLElement | null;
+    expect(photo).not.toBeNull();
+    expect(photo?.className).toMatch(/rounded-tr-2xl/);
+    expect(photo?.style.borderRadius || "").not.toMatch(/%/);
+    expect(
+      container.querySelector("[data-editorial-image='hero']"),
+    ).toBeNull();
+
+    const overlap = container.querySelector(
+      "[data-hero-yellow-overlap]",
+    ) as HTMLElement | null;
+    expect(overlap).not.toBeNull();
+    expect(overlap?.getAttribute("aria-hidden")).toBe("true");
+    expect(overlap?.className).toMatch(/pointer-events-none/);
+    expect(overlap?.style.clipPath || "").toMatch(/polygon/);
+    expect(screen.getByText("About 3 minutes")).toBeInTheDocument();
+  });
+});
+
 describe("EditorialImageFrame", () => {
   afterEach(() => cleanup());
 
   it("provides a relative aspect-ratio box with inline border-radius", () => {
     const { container } = render(
-      <EditorialImageFrame variant="hero">
+      <EditorialImageFrame variant="card">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img alt="Hero" src="/assets/heroes/hero-match.jpg" />
+        <img alt="Card" src="/assets/circles/leadership-lab.jpg" />
       </EditorialImageFrame>,
     );
     const frame = container.querySelector(
-      "[data-editorial-image='hero']",
+      "[data-editorial-image='card']",
     ) as HTMLElement | null;
     expect(frame).not.toBeNull();
     expect(frame?.className).toMatch(/relative/);
-    expect(frame?.style.aspectRatio).toMatch(/16/);
+    expect(frame?.style.aspectRatio).toMatch(/4/);
     expect(frame?.style.borderRadius).toContain("%");
   });
 });

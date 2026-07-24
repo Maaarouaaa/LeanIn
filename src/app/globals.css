@@ -87,6 +87,22 @@ body {
   box-shadow: var(--focus-ring-offset);
 }
 
+/* Split hero: wider angular yellow overlap at large desktops */
+@media (min-width: 1024px) {
+  [data-hero-yellow-overlap] {
+    clip-path: polygon(
+      0% 0%,
+      calc(100% - 6.5rem) 0%,
+      100% 12%,
+      calc(100% - 3.25rem) 34%,
+      100% 56%,
+      calc(100% - 4.75rem) 76%,
+      calc(100% - 6.75rem) 100%,
+      0% 100%
+    );
+  }
+}
+
 /* Family helpers — size/weight come from type-* utilities or local classes */
 .font-display {
   font-family: var(--font-display), "Barlow Condensed", "Arial Narrow", sans-serif;
