@@ -4,13 +4,15 @@ import {
   FeaturedMatchCard,
   SecondaryMatchCard,
 } from "@/components/circles/MatchCards";
+import { CircleFilters } from "@/components/circles/CircleFilters";
 import { Button } from "@/components/ui/Button";
-import { FilterPill } from "@/components/ui/SelectableControls";
+import {
+  matchesCircleFilter,
+  type CircleFilterValue,
+} from "@/lib/circle-filters";
 import type { CircleMatch, MemberPreferences } from "@/lib/types";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-
-type FilterValue = "all" | "virtual" | "in-person" | "weeknights";
 
 interface MatchesExperienceProps {
   matches: CircleMatch[];
@@ -27,7 +29,7 @@ export function MatchesExperience({
   error,
   submissionId,
 }: MatchesExperienceProps) {
-  const [filter, setFilter] = useState<FilterValue>("all");
+  const [filter, setFilter] = useState<CircleFilterValue>("all");
 
   useEffect(() => {
     console.log("[circle-match] MatchesExperience render", {
@@ -40,24 +42,10 @@ export function MatchesExperience({
   }, [allMatches?.length, error, matches.length, preferences, submissionId]);
 
   const filtered = useMemo(() => {
-    // Filter the full ranked set, then take up to three — never fill/retry to length 3.
     const pool = allMatches?.length ? allMatches : matches;
-    const next = pool.filter((match) => {
-      if (filter === "virtual") {
-        return (
-          match.circle.format === "virtual" || match.circle.format === "hybrid"
-        );
-      }
-      if (filter === "in-person") {
-        return (
-          match.circle.format === "in-person" ||
-          match.circle.format === "hybrid"
-        );
-      }
-      if (filter === "weeknights") return match.circle.meetsWeeknights;
-      return true;
-    });
-    return next.slice(0, 3);
+    return pool
+      .filter((match) => matchesCircleFilter(match.circle, filter))
+      .slice(0, 3);
   }, [allMatches, filter, matches]);
 
   if (!preferences && !error) {
@@ -83,7 +71,13 @@ export function MatchesExperience({
         <h2 className="type-section">Unable to load matches</h2>
         <p className="mt-2 type-meta">{error}</p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link href={submissionId ? `/matches?sid=${encodeURIComponent(submissionId)}` : "/matches"}>
+          <Link
+            href={
+              submissionId
+                ? `/matches?sid=${encodeURIComponent(submissionId)}`
+                : "/matches"
+            }
+          >
             <Button variant="secondary">Retry</Button>
           </Link>
           <Link href="/match">
@@ -102,7 +96,11 @@ export function MatchesExperience({
   if (!filtered.length) {
     return (
       <div className="space-y-6">
-        <FilterBar filter={filter} setFilter={setFilter} />
+        <CircleFilters
+          value={filter}
+          onChange={setFilter}
+          allLabel="All three"
+        />
         <p className="sr-only" aria-live="polite">
           {announcement}
         </p>
@@ -128,7 +126,7 @@ export function MatchesExperience({
 
   return (
     <div className="space-y-8">
-      <FilterBar filter={filter} setFilter={setFilter} />
+      <CircleFilters value={filter} onChange={setFilter} allLabel="All three" />
       <p className="sr-only" aria-live="polite">
         {announcement}
       </p>
@@ -140,41 +138,6 @@ export function MatchesExperience({
           <SecondaryMatchCard match={second} tone="lavender" />
         ) : null}
         {third ? <SecondaryMatchCard match={third} tone="lime" /> : null}
-      </div>
-    </div>
-  );
-}
-
-function FilterBar({
-  filter,
-  setFilter,
-}: {
-  filter: FilterValue;
-  setFilter: (value: FilterValue) => void;
-}) {
-  const options: { value: FilterValue; label: string }[] = [
-    { value: "all", label: "All three" },
-    { value: "virtual", label: "Virtual" },
-    { value: "in-person", label: "In person" },
-    { value: "weeknights", label: "Weeknights" },
-  ];
-
-  return (
-    <div className="space-y-2">
-      <p className="type-meta font-semibold text-ink">Filter results</p>
-      <div
-        className="flex gap-2 overflow-x-auto pb-1"
-        role="group"
-        aria-label="Filter matches"
-      >
-        {options.map((option) => (
-          <FilterPill
-            key={option.value}
-            label={option.label}
-            pressed={filter === option.value}
-            onClick={() => setFilter(option.value)}
-          />
-        ))}
       </div>
     </div>
   );

@@ -73,20 +73,10 @@ describe("Join request modal", () => {
     const { trigger, dialog } = await openModal(user);
     expect(document.body.style.overflow).toBe("hidden");
 
-    const content = dialog.querySelector(".overflow-y-auto");
-    expect(content).not.toBeNull();
     expect(dialog.className).toMatch(/max-h-\[calc\(100dvh-2rem\)\]/);
+    expect(dialog.className).toMatch(/overflow-y-auto/);
     expect(dialog.className).toMatch(/overscroll-contain/);
-
-    // Short viewport: dialog content area remains scrollable.
-    Object.defineProperty(window, "innerHeight", {
-      configurable: true,
-      value: 480,
-    });
-    expect(
-      getComputedStyle(content as Element).overflowY === "auto" ||
-        (content as HTMLElement).className.includes("overflow-y-auto"),
-    ).toBe(true);
+    expect(dialog.className).toMatch(/touch-pan-y/);
 
     await user.keyboard("{Escape}");
     await waitFor(() => {

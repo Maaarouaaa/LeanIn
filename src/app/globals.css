@@ -183,6 +183,21 @@ body {
   transform: translateX(2px);
 }
 
+/* Featured top-match image: organic edge faces the text (left on desktop). */
+@media (min-width: 1024px) {
+  .featured-image-frame {
+    border-radius: 0 !important;
+    clip-path: url(#featured-image-shape);
+  }
+}
+
+@media (max-width: 1023px) {
+  .featured-image-frame {
+    clip-path: none;
+    border-radius: 28% 1rem 1.25rem 12% / 16% 1rem 1rem 22% !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .view-circle-arrow-icon {
     transition: none !important;

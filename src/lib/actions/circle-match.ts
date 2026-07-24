@@ -3,6 +3,7 @@
 import { requireAuthenticatedMember } from "@/lib/auth";
 import { MAX_GOALS, MAX_NOTE_LENGTH } from "@/lib/constants";
 import { enrichCirclePresentation } from "@/lib/enrich-circle";
+import { sortCommunityCircles } from "@/lib/circle-filters";
 import { rankCircleMatches } from "@/lib/matching";
 import { getDataStore } from "@/lib/data/store";
 import {
@@ -420,6 +421,51 @@ export async function getCircleBySlugAction(slug: string) {
     return {
       ok: false as const,
       error: toUserFacingError(error, "Unable to load this Circle."),
+    };
+  }
+}
+
+/**
+ * Full public Circle catalog for Community browse — never limited to top matches.
+ */
+export async function getCommunityCircles() {
+  try {
+    const store = await getDataStore();
+    const profile = await store.getDemoProfile();
+    const stored = await withTimeout(
+      store.listCircles(),
+      SUPABASE_QUERY_TIMEOUT_MS,
+      "Loading Circles timed out. Please try again.",
+    );
+    const circles = sortCommunityCircles(
+      stored.map((circle) => enrichCirclePresentation(circle)),
+    );
+
+    let scoresById: Record<string, number> = {};
+    if (profile.preferences) {
+      const input = inputFromPreferences(profile.preferences);
+      if (input) {
+        const ranked = rankCircleMatches(input, circles);
+        scoresById = Object.fromEntries(
+          ranked.map((match) => [match.circle.id, match.score]),
+        );
+      }
+    }
+
+    return {
+      ok: true as const,
+      data: {
+        circles,
+        scoresById,
+        preferences: profile.preferences,
+        mode: store.mode,
+      },
+    };
+  } catch (error) {
+    logActionError("getCommunityCircles failed", error);
+    return {
+      ok: false as const,
+      error: toUserFacingError(error, "Unable to load the Circle community."),
     };
   }
 }

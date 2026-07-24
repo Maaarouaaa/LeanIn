@@ -38,7 +38,7 @@ describe("ViewCircleLink", () => {
     expect(link.textContent?.trim()).toBe("");
     expect(link.textContent).not.toMatch(/View Circle|Door|→/);
     expect(link.querySelector("svg")).not.toBeNull();
-    expect(link.className).toMatch(/bottom-5/);
+    expect(link.className).toMatch(/top-5/);
     expect(link.className).toMatch(/h-11/);
   });
 });

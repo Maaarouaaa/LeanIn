@@ -8,8 +8,15 @@ import { useState } from "react";
 const NAV_ITEMS = [
   { href: "/match", label: "Match" },
   { href: "/matches", label: "Circles" },
-  { href: "/#community", label: "Community" },
+  { href: "/community", label: "Community" },
 ];
+
+function isActive(pathname: string, href: string) {
+  if (href === "/community") return pathname.startsWith("/community");
+  if (href === "/matches") return pathname === "/matches" || pathname.startsWith("/matches/");
+  if (href === "/match") return pathname === "/match" || pathname.startsWith("/match/");
+  return pathname === href;
+}
 
 export function Masthead({
   dataMode,
@@ -48,10 +55,7 @@ export function Masthead({
           aria-label="Primary"
         >
           {NAV_ITEMS.map((item) => {
-            const active =
-              pathname === item.href ||
-              (item.href !== "/#community" &&
-                pathname.startsWith(item.href));
+            const active = isActive(pathname, item.href);
             return (
               <Link
                 key={item.href}

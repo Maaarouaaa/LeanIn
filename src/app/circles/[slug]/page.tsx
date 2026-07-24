@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 
 interface CirclePageProps {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ from?: string | string[] }>;
 }
 
 function formatLabel(format: string): string {
@@ -35,8 +36,14 @@ export async function generateMetadata({
   return { title: result.data.circle.name };
 }
 
-export default async function CircleDetailPage({ params }: CirclePageProps) {
+export default async function CircleDetailPage({
+  params,
+  searchParams,
+}: CirclePageProps) {
   const { slug } = await params;
+  const query = searchParams ? await searchParams : undefined;
+  const fromRaw = Array.isArray(query?.from) ? query?.from[0] : query?.from;
+  const fromCommunity = fromRaw === "community";
   const result = await getCircleBySlugAction(slug);
 
   if (!result.ok) {
@@ -160,10 +167,12 @@ export default async function CircleDetailPage({ params }: CirclePageProps) {
 
             <div className="mt-10">
               <Link
-                href="/matches"
+                href={fromCommunity ? "/community" : "/matches"}
                 className="type-meta font-semibold text-ink underline-offset-4 hover:underline"
               >
-                ← Back to your matches
+                {fromCommunity
+                  ? "← Back to community"
+                  : "← Back to your matches"}
               </Link>
             </div>
           </article>
