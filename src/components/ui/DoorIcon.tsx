@@ -6,38 +6,36 @@ export function DoorIcon({ className, ...props }: SVGProps<SVGSVGElement>) {
   return (
     <svg
       viewBox="0 0 18 18"
-      width="18"
-      height="18"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
-      className={cn("door-icon shrink-0 text-current", className)}
+      className={cn("door-icon h-8 w-8 shrink-0 text-current", className)}
       {...props}
     >
       {/* Frame */}
       <rect
-        x="2.5"
-        y="1.5"
-        width="13"
-        height="15"
-        rx="0.75"
+        x="2.25"
+        y="1.25"
+        width="13.5"
+        height="15.5"
+        rx="0.85"
         stroke="currentColor"
-        strokeWidth="1.25"
+        strokeWidth="1.35"
       />
       {/* Door panel — pivots from the hinge (left) */}
       <g className="door-panel">
         <rect
-          x="3.75"
-          y="2.75"
-          width="10.5"
-          height="12.5"
+          x="3.5"
+          y="2.5"
+          width="11"
+          height="13"
           fill="currentColor"
-          fillOpacity="0.12"
+          fillOpacity="0.14"
           stroke="currentColor"
-          strokeWidth="1"
+          strokeWidth="1.1"
         />
         {/* Handle */}
-        <circle cx="11.75" cy="9" r="1" fill="currentColor" />
+        <circle cx="12" cy="9" r="1.15" fill="currentColor" />
       </g>
     </svg>
   );

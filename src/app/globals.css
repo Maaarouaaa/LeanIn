@@ -173,6 +173,18 @@ body {
   border-radius: 28% 72% 55% 45% / 60% 35% 65% 40%;
 }
 
+/* Shared editorial photography cutout (not for avatars / identity portraits) */
+.editorial-image-frame {
+  overflow: hidden;
+  border-radius: var(--editorial-radius, 34% 10% 28% 14% / 16% 30% 12% 38%);
+  isolation: isolate;
+}
+
+.editorial-image-frame > img,
+.editorial-image-frame img {
+  object-position: var(--editorial-focal, 50% 35%);
+}
+
 /* Animated door for shared “View” Circle actions */
 .door-icon .door-panel {
   transform-box: fill-box;

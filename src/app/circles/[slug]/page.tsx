@@ -1,5 +1,6 @@
 import { JoinRequestCTA } from "@/components/circles/JoinRequestCTA";
 import { LeaderProfile, MemberAvatars } from "@/components/ui/People";
+import { EditorialImageFrame } from "@/components/ui/EditorialImageFrame";
 import { getCircleBySlugAction } from "@/lib/actions/circle-match";
 import { GOAL_LABELS } from "@/lib/constants";
 import { explainTopMatch } from "@/lib/matching";
@@ -89,7 +90,11 @@ export default async function CircleDetailPage({ params }: CirclePageProps) {
           </div>
 
           <div className="relative min-h-72 bg-lavender/50 lg:min-h-full">
-            <div className="absolute inset-4 overflow-hidden sm:inset-6 lg:inset-8">
+            <EditorialImageFrame
+              variant="detail"
+              focalPoint="50% 38%"
+              className="absolute inset-4 sm:inset-6 lg:inset-8"
+            >
               <Image
                 src={circle.imageSrc}
                 alt={circle.imageAlt}
@@ -98,7 +103,7 @@ export default async function CircleDetailPage({ params }: CirclePageProps) {
                 sizes="(max-width: 1024px) 100vw, 45vw"
                 priority
               />
-            </div>
+            </EditorialImageFrame>
           </div>
         </div>
       </section>

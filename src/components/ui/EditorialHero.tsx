@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { EditorialImageFrame } from "@/components/ui/EditorialImageFrame";
 import Image from "next/image";
 import type { ReactNode } from "react";
 
@@ -91,18 +92,22 @@ export function EditorialHero({
           </div>
         </div>
 
-        <div className="relative min-h-64 bg-paper-deep lg:min-h-full">
+        <div className="relative min-h-72 bg-paper-deep lg:min-h-full">
           {imageSrc ? (
-            <div className="absolute inset-3 overflow-hidden rounded-2xl sm:inset-5">
+            <EditorialImageFrame
+              variant="hero"
+              focalPoint="50% 35%"
+              className="absolute inset-3 sm:inset-5"
+            >
               <Image
                 src={imageSrc}
                 alt={imageAlt ?? ""}
                 fill
-                className="object-cover object-[50%_35%]"
+                className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 priority
               />
-            </div>
+            </EditorialImageFrame>
           ) : null}
           {badge ? (
             <span className="absolute bottom-6 right-6 z-10 bg-ink px-3 py-1.5 type-meta font-medium text-white">

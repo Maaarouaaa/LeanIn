@@ -54,11 +54,13 @@ export function Button({
     >
       {loading ? (
         <span
-          className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent"
+          className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-current border-r-transparent"
           aria-hidden="true"
         />
-      ) : null}
-      <span>{loading ? loadingLabel : children}</span>
+      ) : (
+        <span className="h-4 w-4 shrink-0 opacity-0" aria-hidden="true" />
+      )}
+      <span className="text-center">{loading ? loadingLabel : children}</span>
     </button>
   );
 }

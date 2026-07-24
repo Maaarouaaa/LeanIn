@@ -455,17 +455,17 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
         </p>
       ) : null}
 
-      <div className="flex justify-end pt-6">
+      <div className="flex justify-center pt-6">
         <Button
           type="submit"
           size="lg"
           loading={isSubmitting}
-          loadingLabel="Matching…"
+          loadingLabel="Finding your Circles…"
           disabled={!clientReady || isSubmitting}
           aria-describedby={errors.form ? formErrorId : undefined}
-          className="w-full sm:w-auto sm:min-w-56"
+          className="w-full max-w-sm justify-center"
         >
-          Find my Circles →
+          Find my Circles
         </Button>
       </div>
     </form>

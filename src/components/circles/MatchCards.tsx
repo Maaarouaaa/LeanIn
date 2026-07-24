@@ -1,4 +1,5 @@
 import { ViewCircleLink } from "@/components/circles/ViewCircleLink";
+import { EditorialImageFrame } from "@/components/ui/EditorialImageFrame";
 import { MatchBadge } from "@/components/ui/People";
 import { explainTopMatch } from "@/lib/matching";
 import type { CircleMatch } from "@/lib/types";
@@ -54,15 +55,19 @@ export function FeaturedMatchCard({ match }: { match: CircleMatch }) {
               <p className="mt-1 type-meta font-medium">Match</p>
             </div>
           </div>
-          <div className="relative aspect-[16/9] min-w-0 overflow-hidden rounded-2xl bg-paper-deep">
+          <EditorialImageFrame
+            variant="featured"
+            focalPoint="52% 42%"
+            className="aspect-[16/9] min-w-0 bg-paper-deep"
+          >
             <Image
               src={circle.imageSrc}
               alt={circle.imageAlt}
               fill
               sizes="(min-width: 1024px) 48vw, 100vw"
-              className="object-cover object-[52%_42%]"
+              className="object-cover"
             />
-          </div>
+          </EditorialImageFrame>
         </div>
       </div>
     </article>
@@ -81,17 +86,23 @@ export function SecondaryMatchCard({
 
   return (
     <article className="grid overflow-hidden border border-ink bg-surface sm:grid-cols-[0.9fr_1.1fr]">
-      <div className="relative min-h-48">
-        <div className="absolute left-3 top-3 z-10">
+      <div className="relative min-h-48 p-3 sm:p-4">
+        <div className="absolute left-5 top-5 z-10 sm:left-6 sm:top-6">
           <MatchBadge score={score} tone={tone} />
         </div>
-        <Image
-          src={circle.imageSrc}
-          alt={circle.imageAlt}
-          fill
-          className="object-cover"
-          sizes="(max-width: 640px) 100vw, 30vw"
-        />
+        <EditorialImageFrame
+          variant="card"
+          focalPoint="50% 40%"
+          className="absolute inset-3 sm:inset-4"
+        >
+          <Image
+            src={circle.imageSrc}
+            alt={circle.imageAlt}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 100vw, 30vw"
+          />
+        </EditorialImageFrame>
       </div>
       <div className="space-y-3 p-5">
         <p className="type-eyebrow text-ink-muted">{circle.category}</p>
