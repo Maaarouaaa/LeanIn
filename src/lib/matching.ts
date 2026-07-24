@@ -3,6 +3,7 @@ import {
   GOAL_LABELS,
   CAREER_STAGE_LABELS,
 } from "@/lib/constants";
+import { debugLog } from "@/lib/debug";
 import type {
   AvailabilityWindow,
   Circle,
@@ -283,11 +284,11 @@ export function rankCircleMatches(
 ): CircleMatch[] {
   // Materialize a finite array — never iterate an open-ended source.
   const list = Array.isArray(circles) ? circles.slice() : [];
-  console.info("[circle-match] stage:rank.circlesRetrieved", {
+  debugLog("[circle-match] stage:rank.circlesRetrieved", {
     count: list.length,
   });
 
-  console.info("[circle-match] stage:rank.scoreCalculation start", {
+  debugLog("[circle-match] stage:rank.scoreCalculation start", {
     count: list.length,
   });
   const scored: CircleMatch[] = [];
@@ -304,22 +305,22 @@ export function rankCircleMatches(
       scored.push({ circle, score: 0, reasons: [] });
     }
   }
-  console.info("[circle-match] stage:rank.scoreCalculation end", {
+  debugLog("[circle-match] stage:rank.scoreCalculation end", {
     scoredCount: scored.length,
   });
 
-  console.info("[circle-match] stage:rank.sort start", {
+  debugLog("[circle-match] stage:rank.sort start", {
     scoredCount: scored.length,
   });
   scored.sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
     return a.circle.name.localeCompare(b.circle.name);
   });
-  console.info("[circle-match] stage:rank.sort end", {
+  debugLog("[circle-match] stage:rank.sort end", {
     scoredCount: scored.length,
   });
 
-  console.info("[circle-match] stage:rank.results", {
+  debugLog("[circle-match] stage:rank.results", {
     returned: scored.length,
   });
   return scored;

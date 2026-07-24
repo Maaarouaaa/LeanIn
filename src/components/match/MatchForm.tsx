@@ -146,16 +146,12 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     const submissionId = createSubmissionId();
-    console.log("[circle-match] MatchForm onSubmit fired", { submissionId });
     event.preventDefault();
 
     const formEl = event.currentTarget;
 
     // Prevent double-submit while a request is in flight.
     if (submittingRef.current || isSubmitting) {
-      console.log("[circle-match] MatchForm submit ignored (already pending)", {
-        submissionId,
-      });
       return;
     }
 
@@ -163,13 +159,6 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
     const nativeValid = formEl.checkValidity();
     const valid =
       Object.keys(nextErrors).length === 0 && nativeValid;
-
-    console.log("[circle-match] MatchForm validation result", {
-      submissionId,
-      valid,
-      nativeValid,
-      errorKeys: Object.keys(nextErrors),
-    });
 
     if (!valid) {
       setErrors(nextErrors);
@@ -204,27 +193,15 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
       );
 
       if (!result.ok) {
-        console.error("[circle-match] MatchForm save failed", {
-          submissionId,
-          error: result.error,
-        });
         setErrors({ form: result.error });
         pushToast(result.error, "error");
         return;
       }
 
-      console.log("[circle-match] MatchForm navigation start", {
-        submissionId,
-        href: `/matches?sid=${submissionId}`,
-      });
       pushToast("Preferences saved. Finding your Circles…", "success");
       // Deterministic full navigation — do not leave this inside a React transition.
       window.location.assign(`/matches?sid=${encodeURIComponent(submissionId)}`);
     } catch (error) {
-      console.error("[circle-match] MatchForm submit exception", {
-        submissionId,
-        message: error instanceof Error ? error.message : "unknown",
-      });
       const message =
         error instanceof Error
           ? error.message

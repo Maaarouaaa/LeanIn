@@ -65,48 +65,77 @@ export function JoinRequestModal({
     }
 
     startTransition(async () => {
-      const response = await fetch(
-        `/api/circles/${circle.slug}/join-requests`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ note }),
-        },
-      );
+      try {
+        const response = await fetch(
+          `/api/circles/${circle.slug}/join-requests`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ note }),
+          },
+        );
 
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string;
-        id?: string;
-        status?: JoinRequest["status"];
-        createdAt?: string;
-        updatedAt?: string;
-        memberId?: string;
-        circleId?: string;
-      };
+        const payload = (await response.json().catch(() => ({}))) as {
+          error?: string;
+          code?: string;
+          id?: string;
+          requestId?: string;
+          status?: JoinRequest["status"];
+          createdAt?: string;
+          updatedAt?: string;
+          memberId?: string;
+          circleId?: string;
+        };
 
-      if (!response.ok) {
-        const message = payload.error ?? "Unable to submit your join request.";
+        if (response.status === 409 || payload.code === "DUPLICATE_REQUEST") {
+          const message =
+            payload.error ?? "You already have a request for this Circle.";
+          setError(message);
+          pushToast(message, "error");
+          if (payload.requestId || payload.id) {
+            onSuccess({
+              id: payload.requestId ?? payload.id!,
+              profileId: payload.memberId ?? "",
+              circleId: payload.circleId ?? circle.id,
+              note: null,
+              status: payload.status ?? "pending",
+              createdAt: payload.createdAt ?? new Date().toISOString(),
+              updatedAt: payload.updatedAt ?? new Date().toISOString(),
+            });
+            onClose();
+          }
+          return;
+        }
+
+        if (!response.ok) {
+          const message =
+            payload.error ?? "Unable to submit your join request.";
+          setError(message);
+          pushToast(message, "error");
+          return;
+        }
+
+        const request: JoinRequest = {
+          id: payload.id!,
+          profileId: payload.memberId ?? "",
+          circleId: payload.circleId ?? circle.id,
+          note: note.trim() ? note.trim() : null,
+          status: payload.status ?? "pending",
+          createdAt: payload.createdAt ?? new Date().toISOString(),
+          updatedAt: payload.updatedAt ?? new Date().toISOString(),
+        };
+
+        pushToast("Your request was sent to the Circle leader.", "success");
+        onSuccess(request);
+        setNote("");
+        setError(null);
+        onClose();
+        router.refresh();
+      } catch {
+        const message = "Unable to submit your join request. Please try again.";
         setError(message);
         pushToast(message, "error");
-        return;
       }
-
-      const request: JoinRequest = {
-        id: payload.id!,
-        profileId: payload.memberId ?? "",
-        circleId: payload.circleId ?? circle.id,
-        note: note.trim() ? note.trim() : null,
-        status: payload.status ?? "pending",
-        createdAt: payload.createdAt ?? new Date().toISOString(),
-        updatedAt: payload.updatedAt ?? new Date().toISOString(),
-      };
-
-      pushToast("Your request was sent to the Circle leader.", "success");
-      onSuccess(request);
-      setNote("");
-      setError(null);
-      onClose();
-      router.refresh();
     });
   }
 

@@ -13,6 +13,12 @@ interface JoinRequestCTAProps {
   fullWidth?: boolean;
 }
 
+function requestLabel(status: JoinRequest["status"]): string {
+  if (status === "approved") return "Request approved";
+  if (status === "declined") return "Request declined";
+  return "Request sent";
+}
+
 export function JoinRequestCTA({
   circle,
   initialRequest,
@@ -20,6 +26,7 @@ export function JoinRequestCTA({
 }: JoinRequestCTAProps) {
   const [request, setRequest] = useState<JoinRequest | null>(initialRequest);
   const [open, setOpen] = useState(false);
+  const hasRequest = Boolean(request);
   const isPending = request?.status === "pending";
 
   const handleClose = useCallback(() => {
@@ -37,13 +44,13 @@ export function JoinRequestCTA({
           fullWidth ? "w-full" : "flex flex-col gap-3 sm:flex-row sm:items-center"
         }
       >
-        {isPending ? (
+        {hasRequest && request ? (
           <Button
             disabled
             variant="secondary"
             className={fullWidth ? "w-full" : "w-full sm:w-auto"}
           >
-            Request sent
+            {requestLabel(request.status)}
           </Button>
         ) : (
           <Button
@@ -64,6 +71,24 @@ export function JoinRequestCTA({
           <p>
             {circle.leader.name} reviews new requests for this Circle. You’ll
             hear back once she responds.
+          </p>
+        </StatusBanner>
+      ) : null}
+
+      {request?.status === "approved" ? (
+        <StatusBanner tone="success" title="You’re in this Circle.">
+          <p>Your join request was approved.</p>
+        </StatusBanner>
+      ) : null}
+
+      {request?.status === "declined" ? (
+        <StatusBanner
+          tone="error"
+          title="This request was declined."
+        >
+          <p>
+            You already have a request on file for this Circle. Choose another
+            Circle to continue.
           </p>
         </StatusBanner>
       ) : null}

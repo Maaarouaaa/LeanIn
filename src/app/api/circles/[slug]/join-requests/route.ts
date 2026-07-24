@@ -8,6 +8,8 @@ interface RouteContext {
   params: Promise<{ slug: string }>;
 }
 
+const DUPLICATE_MESSAGE = "You already have a request for this Circle.";
+
 export async function POST(request: Request, context: RouteContext) {
   try {
     const memberId = await requireAuthenticatedMember();
@@ -38,14 +40,17 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Circle not found." }, { status: 404 });
     }
 
+    // Scoped by profile + Circle; any prior row blocks a second request.
     const existing = await store.getJoinRequest(memberId, circle.id);
-    if (existing && existing.status === "pending") {
+    if (existing) {
       return NextResponse.json(
         {
-          error: "You already have an active request for this Circle.",
+          error: DUPLICATE_MESSAGE,
           code: "DUPLICATE_REQUEST",
           requestId: existing.id,
           status: existing.status,
+          circleId: existing.circleId,
+          memberId: existing.profileId,
         },
         { status: 409 },
       );
@@ -78,7 +83,7 @@ export async function POST(request: Request, context: RouteContext) {
     if (code === "DUPLICATE_REQUEST") {
       return NextResponse.json(
         {
-          error: "You already have an active request for this Circle.",
+          error: DUPLICATE_MESSAGE,
           code,
         },
         { status: 409 },
@@ -86,12 +91,7 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unable to create join request.",
-      },
+      { error: "Unable to create join request. Please try again." },
       { status: 500 },
     );
   }
@@ -112,12 +112,7 @@ export async function GET(_request: Request, context: RouteContext) {
   } catch (error) {
     logSupabaseError("join-requests API failed", error);
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unable to load join request.",
-      },
+      { error: "Unable to load join request." },
       { status: 500 },
     );
   }

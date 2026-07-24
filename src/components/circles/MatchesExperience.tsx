@@ -12,7 +12,7 @@ import {
 } from "@/lib/circle-filters";
 import type { CircleMatch, MemberPreferences } from "@/lib/types";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 interface MatchesExperienceProps {
   matches: CircleMatch[];
@@ -30,16 +30,6 @@ export function MatchesExperience({
   submissionId,
 }: MatchesExperienceProps) {
   const [filter, setFilter] = useState<CircleFilterValue>("all");
-
-  useEffect(() => {
-    console.log("[circle-match] MatchesExperience render", {
-      submissionId: submissionId ?? null,
-      matchCount: matches.length,
-      allMatchCount: allMatches?.length ?? 0,
-      hasPreferences: Boolean(preferences),
-      hasError: Boolean(error),
-    });
-  }, [allMatches?.length, error, matches.length, preferences, submissionId]);
 
   const filtered = useMemo(() => {
     const pool = allMatches?.length ? allMatches : matches;

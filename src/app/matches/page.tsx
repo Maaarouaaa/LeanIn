@@ -4,6 +4,7 @@ import { EditorialHero } from "@/components/ui/EditorialHero";
 import { getRankedMatches } from "@/lib/actions/circle-match";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { debugLog } from "@/lib/debug";
 
 export const dynamic = "force-dynamic";
 
@@ -20,13 +21,13 @@ export default async function MatchesPage({
   const sidParam = params?.sid;
   const submissionId = Array.isArray(sidParam) ? sidParam[0] : sidParam;
 
-  console.info("[circle-match] matches.page loader start", {
+  debugLog("[circle-match] matches.page loader start", {
     submissionId: submissionId ?? null,
   });
 
   const result = await getRankedMatches(undefined, submissionId);
 
-  console.info("[circle-match] matches.page loader end", {
+  debugLog("[circle-match] matches.page loader end", {
     submissionId: submissionId ?? null,
     ok: result.ok,
     matchCount: result.ok ? result.data.matches.length : 0,

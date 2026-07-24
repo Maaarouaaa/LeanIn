@@ -68,11 +68,10 @@ export const memoryStore: DataStore = {
 
   async createJoinRequest({ profileId, circleId, note }) {
     const state = getState();
+    // Unique per profile + Circle (any status), matching the Supabase constraint.
     const existing = state.joinRequests.find(
       (request) =>
-        request.profileId === profileId &&
-        request.circleId === circleId &&
-        request.status === "pending",
+        request.profileId === profileId && request.circleId === circleId,
     );
     if (existing) {
       const error = new Error("A join request for this Circle already exists.");
