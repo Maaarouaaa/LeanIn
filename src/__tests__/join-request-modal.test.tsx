@@ -167,4 +167,25 @@ describe("Join request modal", () => {
       /growing into a broader team leadership role/i,
     );
   });
+
+  it("compacts the join modal header and send label", async () => {
+    const user = userEvent.setup();
+    const { dialog } = await openModal(user);
+
+    expect(
+      within(dialog).queryByText(/Request to join/i),
+    ).not.toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("heading", { name: circle.name }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: "Send request" }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole("button", { name: /Send request →/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(dialog).getByText(/visible only to the Circle leader/i),
+    ).toBeInTheDocument();
+  });
 });

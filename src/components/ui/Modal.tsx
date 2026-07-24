@@ -120,9 +120,8 @@ export function Modal({
         )}
         style={{ WebkitOverflowScrolling: "touch" }}
       >
-        <div className="sticky top-0 z-20 flex items-start justify-between gap-3 border-b border-ink/15 bg-[linear-gradient(180deg,#efe8f8_0%,#f7f2fb_100%)] px-5 py-3.5 sm:px-6 sm:py-4">
-          <div className="min-w-0 space-y-1.5">
-            <p className="type-eyebrow text-ink">Request to join</p>
+        <div className="sticky top-0 z-20 flex items-start justify-between gap-3 border-b border-ink/15 bg-[linear-gradient(180deg,#efe8f8_0%,#f7f2fb_100%)] px-5 py-3 sm:px-6 sm:py-3.5">
+          <div className="min-w-0 space-y-1">
             <h2
               id={titleId}
               className="font-display text-2xl font-semibold leading-tight tracking-tight text-ink sm:text-3xl"
@@ -146,10 +145,10 @@ export function Modal({
           </Button>
         </div>
 
-        <div className="px-5 py-4 sm:px-6 sm:py-5">{children}</div>
+        <div className="px-5 py-4 sm:px-6 sm:py-4">{children}</div>
 
         {footer ? (
-          <div className="sticky bottom-0 z-20 border-t border-ink/15 bg-surface/95 px-5 py-3 backdrop-blur-sm sm:px-6">
+          <div className="sticky bottom-0 z-20 border-t border-ink/15 bg-surface/95 px-5 py-2.5 backdrop-blur-sm sm:px-6 sm:py-3">
             {footer}
           </div>
         ) : null}

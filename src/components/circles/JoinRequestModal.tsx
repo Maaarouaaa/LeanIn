@@ -117,34 +117,28 @@ export function JoinRequestModal({
       title={circle.name}
       description={`Share a short note with ${leaderFirstName} about why you’d like to join.`}
       footer={
-        <div className="space-y-2.5">
-          <p className="text-xs text-ink-muted">
-            Your note is visible only to the Circle leader. Your request will be
-            saved and can be reviewed later.
-          </p>
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <Button
-              variant="secondary"
-              onClick={handleClose}
-              disabled={isPending}
-              className="w-full sm:w-auto"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              form="join-request-form"
-              loading={isPending}
-              loadingLabel="Sending…"
-              className="w-full sm:w-auto"
-            >
-              Send request →
-            </Button>
-          </div>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
+          <Button
+            variant="secondary"
+            onClick={handleClose}
+            disabled={isPending}
+            className="w-full sm:w-auto"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="join-request-form"
+            loading={isPending}
+            loadingLabel="Sending…"
+            className="w-full sm:w-auto"
+          >
+            Send request
+          </Button>
         </div>
       }
     >
-      <form id="join-request-form" onSubmit={handleSubmit} className="space-y-4">
+      <form id="join-request-form" onSubmit={handleSubmit} className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <p id={helpId} className="max-w-md text-sm text-ink-soft">
             Share what drew you to the Circle or what you hope to learn. A short
@@ -181,6 +175,10 @@ export function JoinRequestModal({
           />
           <p id={countId} className="text-right text-xs text-ink-muted">
             {note.length} / {MAX_NOTE_LENGTH}
+          </p>
+          <p className="text-xs text-ink-muted">
+            Your note is visible only to the Circle leader. Your request will be
+            saved and can be reviewed later.
           </p>
         </div>
 
