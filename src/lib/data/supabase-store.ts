@@ -1,6 +1,11 @@
 import { DEMO_PROFILE_ID } from "@/lib/constants";
 import type { DataStore } from "@/lib/data/types";
 import { getSupabaseAdmin, logSupabaseError } from "@/lib/supabase/server";
+import {
+  SUPABASE_QUERY_TIMEOUT_MS,
+  TimeoutError,
+  withTimeout,
+} from "@/lib/with-timeout";
 import type {
   CareerStage,
   Circle,
@@ -17,6 +22,40 @@ import type {
 function throwQueryError(context: string, error: unknown): never {
   logSupabaseError(context, error);
   throw error;
+}
+
+function throwTimeout(context: string, error: TimeoutError): never {
+  logSupabaseError(`${context} timed out`, error);
+  throw error;
+}
+
+async function runSupabaseQuery<T>(
+  stage: string,
+  run: () => PromiseLike<{ data: T; error: unknown }>,
+): Promise<T> {
+  const started = Date.now();
+  console.info(`[circle-match] stage:${stage} start`);
+  try {
+    const { data, error } = await withTimeout(
+      Promise.resolve(run()),
+      SUPABASE_QUERY_TIMEOUT_MS,
+      "Supabase query timed out after 10 seconds.",
+    );
+    if (error) throwQueryError(`${stage} failed`, error);
+    console.info(`[circle-match] stage:${stage} end`, {
+      ok: true,
+      ms: Date.now() - started,
+    });
+    return data;
+  } catch (error) {
+    console.info(`[circle-match] stage:${stage} end`, {
+      ok: false,
+      ms: Date.now() - started,
+      reason: error instanceof TimeoutError ? "timeout" : "exception",
+    });
+    if (error instanceof TimeoutError) throwTimeout(stage, error);
+    throw error;
+  }
 }
 
 interface ProfileRow {
@@ -113,114 +152,139 @@ export const supabaseStore: DataStore = {
   mode: "supabase",
 
   async getDemoProfile() {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", DEMO_PROFILE_ID)
-      .single();
-    if (error) throwQueryError("profiles.getDemoProfile failed", error);
+    const data = await runSupabaseQuery("supabase.profiles.getDemoProfile", () =>
+      getSupabaseAdmin()
+        .from("profiles")
+        .select("*")
+        .eq("id", DEMO_PROFILE_ID)
+        .single(),
+    );
     return mapProfile(data as ProfileRow);
   },
 
   async savePreferences(profileId, preferences) {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("profiles")
-      .update({
-        preferences,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", profileId)
-      .select("*")
-      .single();
-    if (error) throwQueryError("profiles.savePreferences failed", error);
-    return mapProfile(data as ProfileRow);
+    try {
+      const data = await runSupabaseQuery(
+        "supabase.profiles.savePreferences",
+        () =>
+          getSupabaseAdmin()
+            .from("profiles")
+            .update({
+              preferences,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", profileId)
+            .select("*")
+            .single(),
+      );
+      return mapProfile(data as ProfileRow);
+    } catch (error) {
+      if (error instanceof TimeoutError) {
+        throw new TimeoutError(
+          "Saving preferences timed out. Please try again.",
+        );
+      }
+      if (error instanceof Error) {
+        throw new Error(
+          error.message || "Unable to save preferences. Please try again.",
+        );
+      }
+      throw new Error("Unable to save preferences. Please try again.");
+    }
   },
 
   async listCircles() {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("circles")
-      .select("*")
-      .order("name", { ascending: true });
-    if (error) throwQueryError("circles.listCircles failed", error);
+    const data = await runSupabaseQuery("supabase.circles.listCircles", () =>
+      getSupabaseAdmin()
+        .from("circles")
+        .select("*")
+        .order("name", { ascending: true }),
+    );
     return (data as CircleRow[]).map(mapCircle);
   },
 
   async getCircleBySlug(slug) {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("circles")
-      .select("*")
-      .eq("slug", slug)
-      .maybeSingle();
-    if (error) throwQueryError("circles.getCircleBySlug failed", error);
+    const data = await runSupabaseQuery("supabase.circles.getCircleBySlug", () =>
+      getSupabaseAdmin()
+        .from("circles")
+        .select("*")
+        .eq("slug", slug)
+        .maybeSingle(),
+    );
     return data ? mapCircle(data as CircleRow) : null;
   },
 
   async getCircleById(id) {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("circles")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
-    if (error) throwQueryError("circles.getCircleById failed", error);
+    const data = await runSupabaseQuery("supabase.circles.getCircleById", () =>
+      getSupabaseAdmin()
+        .from("circles")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle(),
+    );
     return data ? mapCircle(data as CircleRow) : null;
   },
 
   async createJoinRequest({ profileId, circleId, note }) {
-    const supabase = getSupabaseAdmin();
-    const timestamp = new Date().toISOString();
-    const { data, error } = await supabase
-      .from("join_requests")
-      .insert({
-        profile_id: profileId,
-        circle_id: circleId,
-        note: note?.trim() ? note.trim() : null,
-        status: "pending",
-        updated_at: timestamp,
-      })
-      .select("*")
-      .single();
-
-    if (error) {
-      if (error.code === "23505") {
+    try {
+      const timestamp = new Date().toISOString();
+      const data = await runSupabaseQuery(
+        "supabase.join_requests.createJoinRequest",
+        () =>
+          getSupabaseAdmin()
+            .from("join_requests")
+            .insert({
+              profile_id: profileId,
+              circle_id: circleId,
+              note: note?.trim() ? note.trim() : null,
+              status: "pending",
+              updated_at: timestamp,
+            })
+            .select("*")
+            .single(),
+      );
+      return mapJoinRequest(data as JoinRequestRow);
+    } catch (error) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "code" in error &&
+        (error as { code?: string }).code === "23505"
+      ) {
         const duplicate = new Error(
           "A join request for this Circle already exists.",
         );
         (duplicate as Error & { code: string }).code = "DUPLICATE_REQUEST";
         throw duplicate;
       }
-      throwQueryError("join_requests.createJoinRequest failed", error);
+      throw error;
     }
-
-    return mapJoinRequest(data as JoinRequestRow);
   },
 
   async getJoinRequest(profileId, circleId) {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("join_requests")
-      .select("*")
-      .eq("profile_id", profileId)
-      .eq("circle_id", circleId)
-      .maybeSingle();
-    if (error) throwQueryError("join_requests.getJoinRequest failed", error);
+    const data = await runSupabaseQuery(
+      "supabase.join_requests.getJoinRequest",
+      () =>
+        getSupabaseAdmin()
+          .from("join_requests")
+          .select("*")
+          .eq("profile_id", profileId)
+          .eq("circle_id", circleId)
+          .maybeSingle(),
+    );
     return data ? mapJoinRequest(data as JoinRequestRow) : null;
   },
 
   async listJoinRequestsForProfile(profileId) {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("join_requests")
-      .select("*")
-      .eq("profile_id", profileId)
-      .order("created_at", { ascending: false });
-    if (error) {
-      throwQueryError("join_requests.listJoinRequestsForProfile failed", error);
-    }
+    const data = await runSupabaseQuery(
+      "supabase.join_requests.listJoinRequestsForProfile",
+      () =>
+        getSupabaseAdmin()
+          .from("join_requests")
+          .select("*")
+          .eq("profile_id", profileId)
+          .order("created_at", { ascending: false }),
+    );
     return (data as JoinRequestRow[]).map(mapJoinRequest);
   },
 };

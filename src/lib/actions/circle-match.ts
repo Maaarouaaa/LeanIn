@@ -9,6 +9,7 @@ import {
   preferencesFromInput,
 } from "@/lib/data/types";
 import { logSupabaseError } from "@/lib/supabase/server";
+import { TimeoutError } from "@/lib/with-timeout";
 import type {
   CircleMatch,
   JoinRequest,
@@ -19,6 +20,20 @@ import type {
 
 function logActionError(context: string, error: unknown) {
   logSupabaseError(context, error);
+}
+
+function logStage(stage: string, phase: "start" | "end", extra?: Record<string, unknown>) {
+  console.info(`[circle-match] stage:${stage} ${phase}`, extra ?? {});
+}
+
+function toUserFacingError(error: unknown, fallback: string): string {
+  if (error instanceof TimeoutError) return error.message;
+  if (error instanceof Error && error.message) return error.message;
+  if (error && typeof error === "object" && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim()) return message;
+  }
+  return fallback;
 }
 
 export type ActionResult<T> =
@@ -38,23 +53,72 @@ function validatePreferences(input: MatchFormInput): string | null {
 export async function saveMemberPreferences(
   input: MatchFormInput,
 ): Promise<ActionResult<{ profile: Profile; mode: "supabase" | "memory" }>> {
-  const validationError = validatePreferences(input);
-  if (validationError) return { ok: false, error: validationError };
+  const actionStarted = Date.now();
+  logStage("saveMemberPreferences", "start", {
+    goalCount: input.goals?.length ?? 0,
+    hasCareerStage: Boolean(input.careerStage),
+    hasFormat: Boolean(input.format),
+    hasFrequency: Boolean(input.frequency),
+    hasLocation: Boolean(input.location?.trim()),
+  });
 
+  const validationError = validatePreferences(input);
+  if (validationError) {
+    logStage("saveMemberPreferences", "end", {
+      ok: false,
+      reason: "validation",
+      ms: Date.now() - actionStarted,
+    });
+    return { ok: false, error: validationError };
+  }
+
+  // Keep redirect()/navigation on the client. Next.js implements redirect via throw.
   try {
+    logStage("saveMemberPreferences.auth", "start");
     const memberId = await requireAuthenticatedMember();
+    logStage("saveMemberPreferences.auth", "end", {
+      ok: true,
+      memberIdPresent: Boolean(memberId),
+    });
+
+    logStage("saveMemberPreferences.getDataStore", "start");
     const store = await getDataStore();
+    logStage("saveMemberPreferences.getDataStore", "end", {
+      ok: true,
+      mode: store.mode,
+    });
+
     const preferences = preferencesFromInput(input);
+
+    logStage("saveMemberPreferences.savePreferences", "start", {
+      mode: store.mode,
+    });
     const profile = await store.savePreferences(memberId, preferences);
+    logStage("saveMemberPreferences.savePreferences", "end", {
+      ok: true,
+      mode: store.mode,
+      profileIdPresent: Boolean(profile?.id),
+    });
+
+    logStage("saveMemberPreferences", "end", {
+      ok: true,
+      mode: store.mode,
+      ms: Date.now() - actionStarted,
+    });
     return { ok: true, data: { profile, mode: store.mode } };
   } catch (error) {
-    logActionError("server action failed", error);
+    logActionError("saveMemberPreferences failed", error);
+    logStage("saveMemberPreferences", "end", {
+      ok: false,
+      reason: error instanceof TimeoutError ? "timeout" : "exception",
+      ms: Date.now() - actionStarted,
+    });
     return {
       ok: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Unable to save preferences. Please try again.",
+      error: toUserFacingError(
+        error,
+        "Unable to save preferences. Please try again.",
+      ),
     };
   }
 }
@@ -66,10 +130,16 @@ export async function getMemberPreferences(): Promise<
     mode: "supabase" | "memory";
   }>
 > {
+  logStage("getMemberPreferences", "start");
   try {
     await requireAuthenticatedMember();
     const store = await getDataStore();
     const profile = await store.getDemoProfile();
+    logStage("getMemberPreferences", "end", {
+      ok: true,
+      mode: store.mode,
+      hasPreferences: Boolean(profile.preferences),
+    });
     return {
       ok: true,
       data: {
@@ -79,13 +149,11 @@ export async function getMemberPreferences(): Promise<
       },
     };
   } catch (error) {
-    logActionError("server action failed", error);
+    logActionError("getMemberPreferences failed", error);
+    logStage("getMemberPreferences", "end", { ok: false });
     return {
       ok: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Unable to load your preferences.",
+      error: toUserFacingError(error, "Unable to load your preferences."),
     };
   }
 }
@@ -101,11 +169,18 @@ export async function getRankedMatches(filters?: {
     mode: "supabase" | "memory";
   }>
 > {
+  logStage("getRankedMatches", "start");
   try {
     await requireAuthenticatedMember();
     const store = await getDataStore();
     const profile = await store.getDemoProfile();
     if (!profile.preferences) {
+      logStage("getRankedMatches", "end", {
+        ok: true,
+        mode: store.mode,
+        matchCount: 0,
+        reason: "no-preferences",
+      });
       return {
         ok: true,
         data: {
@@ -119,6 +194,12 @@ export async function getRankedMatches(filters?: {
 
     const input = inputFromPreferences(profile.preferences);
     if (!input) {
+      logStage("getRankedMatches", "end", {
+        ok: true,
+        mode: store.mode,
+        matchCount: 0,
+        reason: "incomplete-preferences",
+      });
       return {
         ok: true,
         data: {
@@ -155,6 +236,11 @@ export async function getRankedMatches(filters?: {
       ranked = ranked.filter((match) => match.circle.meetsWeeknights);
     }
 
+    logStage("getRankedMatches", "end", {
+      ok: true,
+      mode: store.mode,
+      matchCount: ranked.length,
+    });
     return {
       ok: true,
       data: {
@@ -165,13 +251,11 @@ export async function getRankedMatches(filters?: {
       },
     };
   } catch (error) {
-    logActionError("server action failed", error);
+    logActionError("getRankedMatches failed", error);
+    logStage("getRankedMatches", "end", { ok: false });
     return {
       ok: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Unable to load Circle matches.",
+      error: toUserFacingError(error, "Unable to load Circle matches."),
     };
   }
 }
@@ -208,7 +292,7 @@ export async function createJoinRequestAction(input: {
 
     return { ok: true, data: { request, mode: store.mode } };
   } catch (error) {
-    logActionError("server action failed", error);
+    logActionError("createJoinRequestAction failed", error);
     const code =
       error && typeof error === "object" && "code" in error
         ? String((error as { code: string }).code)
@@ -216,10 +300,7 @@ export async function createJoinRequestAction(input: {
 
     return {
       ok: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Unable to submit your join request.",
+      error: toUserFacingError(error, "Unable to submit your join request."),
       code,
     };
   }
@@ -236,13 +317,10 @@ export async function getJoinRequestStatus(
     const request = await store.getJoinRequest(memberId, circleId);
     return { ok: true, data: { request, mode: store.mode } };
   } catch (error) {
-    logActionError("server action failed", error);
+    logActionError("getJoinRequestStatus failed", error);
     return {
       ok: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Unable to load join request status.",
+      error: toUserFacingError(error, "Unable to load join request status."),
     };
   }
 }
@@ -271,11 +349,10 @@ export async function getCircleBySlugAction(slug: string) {
       data: { circle, request, match, mode: store.mode },
     };
   } catch (error) {
-    logActionError("server action failed", error);
+    logActionError("getCircleBySlugAction failed", error);
     return {
       ok: false as const,
-      error:
-        error instanceof Error ? error.message : "Unable to load this Circle.",
+      error: toUserFacingError(error, "Unable to load this Circle."),
     };
   }
 }

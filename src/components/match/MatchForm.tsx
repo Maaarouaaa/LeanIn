@@ -25,7 +25,7 @@ import type {
   MemberPreferences,
 } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useId, useState } from "react";
 
 interface MatchFormProps {
   initialPreferences?: MemberPreferences | null;
@@ -59,13 +59,15 @@ function toFormState(preferences?: MemberPreferences | null): FormState {
 export function MatchForm({ initialPreferences }: MatchFormProps) {
   const router = useRouter();
   const { pushToast } = useToast();
+  const formErrorId = useId();
   const [form, setForm] = useState<FormState>(() =>
     toFormState(initialPreferences),
   );
   const [errors, setErrors] = useState<FormErrors>({});
-  const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function toggleGoal(value: Goal) {
+    if (isSubmitting) return;
     setForm((current) => {
       const exists = current.goals.includes(value);
       if (exists) {
@@ -97,13 +99,18 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
     return next;
   }
 
-  function handleSubmit(event: React.FormEvent) {
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (isSubmitting) return;
+
     const nextErrors = validate();
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
 
-    startTransition(async () => {
+    setIsSubmitting(true);
+    setErrors((prev) => ({ ...prev, form: undefined }));
+
+    try {
       const result = await saveMemberPreferences({
         goals: form.goals,
         careerStage: form.careerStage as CareerStage,
@@ -121,13 +128,27 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
       }
 
       pushToast("Preferences saved. Finding your Circles…", "success");
+      // Navigate only after a successful save. Do not force-nav on failure.
       router.push("/matches");
-      router.refresh();
-    });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to save preferences. Please try again.";
+      setErrors({ form: message });
+      pushToast(message, "error");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-12" noValidate>
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-12"
+      noValidate
+      aria-busy={isSubmitting || undefined}
+    >
       <section className="space-y-5" aria-labelledby="support-goals-title">
         <div className="flex flex-col gap-3 border-b border-ink pb-4 sm:flex-row sm:items-end sm:justify-between">
           <h2
@@ -152,7 +173,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
                 selected={form.goals.includes(option.value)}
                 accentIndex={index}
                 disabled={
-                  isPending ||
+                  isSubmitting ||
                   (!form.goals.includes(option.value) &&
                     form.goals.length >= MAX_GOALS)
                 }
@@ -188,7 +209,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
               name="careerStage"
               value={form.careerStage}
               error={Boolean(errors.careerStage)}
-              disabled={isPending}
+              disabled={isSubmitting}
               aria-invalid={Boolean(errors.careerStage)}
               aria-describedby={errors.careerStage ? "careerStage-error" : undefined}
               onChange={(event) =>
@@ -217,7 +238,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
               name="frequency"
               value={form.frequency}
               error={Boolean(errors.frequency)}
-              disabled={isPending}
+              disabled={isSubmitting}
               aria-invalid={Boolean(errors.frequency)}
               aria-describedby={errors.frequency ? "frequency-error" : undefined}
               onChange={(event) =>
@@ -243,7 +264,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
               placeholder="Oakland, CA"
               value={form.location}
               error={Boolean(errors.location)}
-              disabled={isPending}
+              disabled={isSubmitting}
               aria-required="true"
               aria-invalid={Boolean(errors.location)}
               aria-describedby={errors.location ? "location-error" : undefined}
@@ -261,7 +282,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
               id="availability"
               name="availability"
               value={form.availability}
-              disabled={isPending}
+              disabled={isSubmitting}
               onChange={(event) =>
                 setForm((current) => ({
                   ...current,
@@ -291,7 +312,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
                 label={option.label}
                 value={option.value}
                 checked={form.format === option.value}
-                disabled={isPending}
+                disabled={isSubmitting}
                 onChange={() =>
                   setForm((current) => ({ ...current, format: option.value }))
                 }
@@ -310,7 +331,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
             type="checkbox"
             className="mt-1 h-5 w-5 accent-[var(--yellow)]"
             checked={form.includeVirtualOutsideLocation}
-            disabled={isPending}
+            disabled={isSubmitting}
             onChange={(event) =>
               setForm((current) => ({
                 ...current,
@@ -323,14 +344,27 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
       </section>
 
       {errors.form ? (
-        <p className="border border-error bg-error-soft px-4 py-3 text-sm text-error" role="alert">
+        <p
+          id={formErrorId}
+          className="border border-error bg-error-soft px-4 py-3 text-sm text-error"
+          role="alert"
+          aria-live="assertive"
+        >
           {errors.form}
         </p>
       ) : null}
 
       <div className="flex flex-col gap-4 border-t border-ink pt-6 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-ink-muted">* Required fields</p>
-            <Button type="submit" size="lg" loading={isPending} loadingLabel="Matching…" className="sm:min-w-56">
+        <Button
+          type="submit"
+          size="lg"
+          loading={isSubmitting}
+          loadingLabel="Matching…"
+          disabled={isSubmitting}
+          aria-describedby={errors.form ? formErrorId : undefined}
+          className="sm:min-w-56"
+        >
           Find my Circles →
         </Button>
       </div>
