@@ -69,7 +69,7 @@ export interface CircleLeader {
   since?: string;
   imageSrc?: string;
   imageAlt?: string;
-  /** First-person quote for the leader profile. */
+  /** First-person quote (stored for compatibility; not rendered publicly). */
   quote?: string;
   /** One concrete detail about how she runs meetings. */
   facilitationNote?: string;

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Barlow_Condensed, Newsreader, IBM_Plex_Sans } from "next/font/google";
 import { connection } from "next/server";
 import { Masthead } from "@/components/layout/Masthead";
+import { MatchFlowShell } from "@/components/layout/MatchFlowShell";
 import { ToastProvider } from "@/components/ui/Toast";
 import { getDataMode } from "@/lib/data/store";
 import "./globals.css";
@@ -64,11 +65,10 @@ export default async function RootLayout({
             </a>
             <Masthead dataMode={dataMode} />
             <main id="main-content" className="flex-1">
-              {children}
+              <MatchFlowShell>{children}</MatchFlowShell>
             </main>
             <footer className="border-t border-ink">
-              <div className="mx-auto flex max-w-[1440px] flex-col gap-2 px-4 py-6 text-sm text-ink-muted sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-10">
-                <p>Circle Match helps new members find a Circle that fits.</p>
+              <div className="mx-auto max-w-[1440px] px-4 py-4 text-sm text-ink-muted sm:px-6 lg:px-10">
                 <p>Lean In Connect</p>
               </div>
             </footer>

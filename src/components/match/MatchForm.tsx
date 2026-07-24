@@ -464,8 +464,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
         </p>
       ) : null}
 
-      <div className="flex flex-col gap-4 border-t border-ink pt-6 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-ink-muted">* Required fields</p>
+      <div className="flex justify-end pt-6">
         <Button
           type="submit"
           size="lg"
@@ -473,7 +472,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
           loadingLabel="Matching…"
           disabled={!clientReady || isSubmitting}
           aria-describedby={errors.form ? formErrorId : undefined}
-          className="sm:min-w-56"
+          className="w-full sm:w-auto sm:min-w-56"
         >
           Find my Circles →
         </Button>

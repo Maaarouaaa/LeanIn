@@ -173,6 +173,29 @@ body {
   border-radius: 28% 72% 55% 45% / 60% 35% 65% 40%;
 }
 
+/* Animated door for shared “View” Circle actions */
+.door-icon .door-panel {
+  transform-box: fill-box;
+  transform-origin: left center;
+  transition: transform 200ms ease-out;
+}
+
+.group:hover .door-icon .door-panel,
+.group:focus-visible .door-icon .door-panel {
+  transform: perspective(40px) rotateY(-55deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .door-icon .door-panel {
+    transition: none !important;
+  }
+
+  .group:hover .door-icon .door-panel,
+  .group:focus-visible .door-icon .door-panel {
+    transform: none !important;
+  }
+}
+
 .hairline {
   border-color: var(--ink);
 }

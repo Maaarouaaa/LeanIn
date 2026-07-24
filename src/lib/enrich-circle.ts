@@ -13,9 +13,7 @@ export function enrichCirclePresentation(circle: Circle): Circle {
   if (!seed) return circle;
 
   const leaderNeedsEnrichment =
-    !circle.leader.quote ||
-    !circle.leader.facilitationNote ||
-    !circle.leader.imageSrc;
+    !circle.leader.facilitationNote || !circle.leader.imageSrc;
 
   const membersNeedEnrichment =
     circle.members.length < 4 ||
@@ -36,7 +34,6 @@ export function enrichCirclePresentation(circle: Circle): Circle {
       ? {
           ...seed.leader,
           ...circle.leader,
-          quote: circle.leader.quote ?? seed.leader.quote,
           facilitationNote:
             circle.leader.facilitationNote ?? seed.leader.facilitationNote,
           imageSrc: circle.leader.imageSrc ?? seed.leader.imageSrc,

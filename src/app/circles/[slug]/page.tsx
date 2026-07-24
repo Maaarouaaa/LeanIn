@@ -1,5 +1,4 @@
 import { JoinRequestCTA } from "@/components/circles/JoinRequestCTA";
-import { ProgressTracker } from "@/components/ui/ProgressTracker";
 import { LeaderProfile, MemberAvatars } from "@/components/ui/People";
 import { getCircleBySlugAction } from "@/lib/actions/circle-match";
 import { GOAL_LABELS } from "@/lib/constants";
@@ -59,15 +58,9 @@ export default async function CircleDetailPage({ params }: CirclePageProps) {
 
   return (
     <div className="page-enter">
-      <div className="px-4 py-4 sm:px-6 lg:px-10">
-        <div className="mx-auto flex max-w-[1440px] justify-end">
-          <ProgressTracker currentStep={3} />
-        </div>
-      </div>
-
       <section className="relative overflow-hidden">
         <div className="mx-auto grid max-w-[1440px] lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="space-y-5 px-4 pb-10 pt-2 sm:px-6 lg:px-10 lg:pb-14">
+          <div className="space-y-5 px-4 pb-10 pt-8 sm:px-6 lg:px-10 lg:pb-14 lg:pt-16">
             <p className="type-eyebrow text-ink-muted">
               {circle.category} · {locationCity}
             </p>

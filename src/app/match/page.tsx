@@ -1,6 +1,5 @@
 import { MatchForm } from "@/components/match/MatchForm";
 import { EditorialHero } from "@/components/ui/EditorialHero";
-import { ProgressTracker } from "@/components/ui/ProgressTracker";
 import { getMemberPreferences } from "@/lib/actions/circle-match";
 import type { Metadata } from "next";
 
@@ -25,7 +24,6 @@ export default async function MatchPage() {
         imageSrc="/assets/heroes/hero-match.jpg"
         imageAlt="Three women smiling together at a Lean In community gathering"
         badge="About 3 minutes"
-        progress={<ProgressTracker currentStep={1} />}
       />
 
       <div className="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-10 lg:py-14">

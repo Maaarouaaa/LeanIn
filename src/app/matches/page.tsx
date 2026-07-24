@@ -1,7 +1,6 @@
 import { MatchesExperience } from "@/components/circles/MatchesExperience";
 import { Button } from "@/components/ui/Button";
 import { EditorialHero } from "@/components/ui/EditorialHero";
-import { ProgressTracker } from "@/components/ui/ProgressTracker";
 import { getRankedMatches } from "@/lib/actions/circle-match";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -50,7 +49,6 @@ export default async function MatchesPage({
         title="Three Circles."
         editorial="One strong starting point."
         outlineWord="Matched"
-        progress={<ProgressTracker currentStep={2} />}
         actions={
           <Link href="/match">
             <Button variant="secondary">Edit preferences</Button>

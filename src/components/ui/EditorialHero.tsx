@@ -11,7 +11,6 @@ interface EditorialHeroProps {
   imageAlt?: string;
   badge?: string;
   actions?: ReactNode;
-  progress?: ReactNode;
   tone?: "split" | "yellow" | "detail";
   className?: string;
   children?: ReactNode;
@@ -26,7 +25,6 @@ export function EditorialHero({
   imageAlt,
   badge,
   actions,
-  progress,
   tone = "split",
   className,
   children,
@@ -44,7 +42,7 @@ export function EditorialHero({
             {outlineWord}
           </span>
         ) : null}
-        <div className="relative z-10 mx-auto flex max-w-[1440px] flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="relative z-10 mx-auto flex max-w-[1440px] flex-col gap-6 pt-2 lg:flex-row lg:items-end lg:justify-between lg:pt-8">
           <div className="max-w-3xl space-y-3">
             {eyebrow ? (
               <p className="type-eyebrow text-ink">{eyebrow}</p>
@@ -56,10 +54,9 @@ export function EditorialHero({
               </p>
             ) : null}
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            {progress}
-            {actions}
-          </div>
+          {actions ? (
+            <div className="flex flex-wrap items-center gap-3">{actions}</div>
+          ) : null}
         </div>
         {children}
       </section>
@@ -74,7 +71,7 @@ export function EditorialHero({
       )}
     >
       <div className="mx-auto grid max-w-[1440px] lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="relative bg-yellow px-4 py-10 sm:px-8 lg:px-10 lg:py-16">
+        <div className="relative bg-yellow px-4 pb-10 pt-10 sm:px-8 lg:px-10 lg:pb-16 lg:pt-20">
           {outlineWord ? (
             <span className="outline-word absolute left-2 top-8 text-[22vw] leading-none lg:text-[8.5rem]">
               {outlineWord}
@@ -92,21 +89,16 @@ export function EditorialHero({
             ) : null}
             {actions}
           </div>
-          {progress ? (
-            <div className="absolute right-4 top-4 z-20 sm:right-8">
-              {progress}
-            </div>
-          ) : null}
         </div>
 
         <div className="relative min-h-64 bg-paper-deep lg:min-h-full">
           {imageSrc ? (
-            <div className="absolute inset-3 overflow-hidden organic-mask-wide sm:inset-5">
+            <div className="absolute inset-3 overflow-hidden rounded-2xl sm:inset-5">
               <Image
                 src={imageSrc}
                 alt={imageAlt ?? ""}
                 fill
-                className="object-cover"
+                className="object-cover object-[50%_35%]"
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 priority
               />

@@ -160,25 +160,22 @@ function FilterBar({
   ];
 
   return (
-    <div className="flex flex-col gap-4 border-b border-ink pb-5 sm:flex-row sm:items-center sm:justify-between">
-      <div className="space-y-2">
-        <p className="type-meta font-semibold text-ink">Filter results</p>
-        <div
-          className="flex gap-2 overflow-x-auto pb-1"
-          role="group"
-          aria-label="Filter matches"
-        >
-          {options.map((option) => (
-            <FilterPill
-              key={option.value}
-              label={option.label}
-              pressed={filter === option.value}
-              onClick={() => setFilter(option.value)}
-            />
-          ))}
-        </div>
+    <div className="space-y-2">
+      <p className="type-meta font-semibold text-ink">Filter results</p>
+      <div
+        className="flex gap-2 overflow-x-auto pb-1"
+        role="group"
+        aria-label="Filter matches"
+      >
+        {options.map((option) => (
+          <FilterPill
+            key={option.value}
+            label={option.label}
+            pressed={filter === option.value}
+            onClick={() => setFilter(option.value)}
+          />
+        ))}
       </div>
-      <p className="type-meta text-ink-muted">Ranked by your saved preferences</p>
     </div>
   );
 }

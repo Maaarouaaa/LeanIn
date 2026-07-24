@@ -25,7 +25,6 @@ describe("enrichCirclePresentation", () => {
     };
 
     const enriched = enrichCirclePresentation(sparse);
-    expect(enriched.leader.quote).toContain("hard conversation");
     expect(enriched.leader.facilitationNote).toContain("influence rehearsal");
     expect(enriched.members).toHaveLength(4);
     expect(enriched.members.every((member) => member.imageSrc)).toBe(true);

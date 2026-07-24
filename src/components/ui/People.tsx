@@ -119,12 +119,11 @@ export function LeaderProfile({
   circle: Circle;
 }) {
   const portrait = resolveLeaderPortrait(leader, circle);
-  const quote = leader.quote?.trim() || null;
   const facilitationNote =
     leader.facilitationNote?.trim() ||
     (leader.since
       ? `She has led this Circle since ${leader.since}, keeping each gathering focused on one live workplace situation.`
-      : null);
+      : leader.bio.trim() || null);
 
   return (
     <figure className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
@@ -137,22 +136,15 @@ export function LeaderProfile({
           sizes="(max-width: 640px) 128px, 144px"
         />
       </div>
-      <figcaption className="min-w-0 flex-1 space-y-3">
+      <figcaption className="min-w-0 flex-1 space-y-2">
         <div>
           <p className="text-xl font-semibold text-ink sm:text-2xl">
             {leader.name}
           </p>
           <p className="mt-1 type-meta text-ink-muted">{leader.title}</p>
         </div>
-        {quote ? (
-          <blockquote className="measure border-l-2 border-ink pl-4 font-editorial type-lead italic text-ink-soft">
-            “{quote}”
-          </blockquote>
-        ) : (
-          <p className="measure type-body text-ink-soft">{leader.bio}</p>
-        )}
         {facilitationNote ? (
-          <p className="measure type-meta text-ink-soft">{facilitationNote}</p>
+          <p className="measure type-body text-ink-soft">{facilitationNote}</p>
         ) : null}
       </figcaption>
     </figure>
