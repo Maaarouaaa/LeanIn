@@ -246,18 +246,9 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
       aria-busy={isSubmitting || undefined}
     >
       <section className="space-y-5" aria-labelledby="support-goals-title">
-        <div className="flex flex-col gap-3 border-b border-ink pb-4 sm:flex-row sm:items-end sm:justify-between">
-          <h2
-            id="support-goals-title"
-            className="type-section text-ink"
-          >
-            01 What kind of support are you looking for?
-          </h2>
-          <p className="max-w-sm text-sm text-ink-muted sm:text-right">
-            We use these preferences to rank Circles that fit your goals—not
-            just the most popular ones.
-          </p>
-        </div>
+        <h2 id="support-goals-title" className="type-section text-ink">
+          01 What kind of support are you looking for?
+        </h2>
 
         <fieldset>
           <legend className="sr-only">Support goals</legend>
