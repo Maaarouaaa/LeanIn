@@ -17,7 +17,6 @@ export default async function MatchPage() {
     <div className="page-enter">
       <EditorialHero
         tone="split"
-        eyebrow="Personalized Circle matching"
         title="Find your people."
         editorial="The right room can change what feels possible."
         outlineWord="Match"

@@ -6,7 +6,6 @@ export default function HomePage() {
     <div className="page-enter">
       <section className="border-b border-ink bg-yellow px-4 py-16 sm:px-6 lg:px-10">
         <div className="mx-auto max-w-[1440px] space-y-5">
-          <p className="type-eyebrow text-ink">Lean In Connect</p>
           <h1 className="type-display max-w-3xl text-ink">Find your people.</h1>
           <p className="measure font-editorial type-lead italic text-plum">
             The right room can change what feels possible.

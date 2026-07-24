@@ -3,6 +3,7 @@ import { Barlow_Condensed, Newsreader, IBM_Plex_Sans } from "next/font/google";
 import { connection } from "next/server";
 import { Masthead } from "@/components/layout/Masthead";
 import { MatchFlowShell } from "@/components/layout/MatchFlowShell";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 import { ToastProvider } from "@/components/ui/Toast";
 import { getDataMode } from "@/lib/data/store";
 import "./globals.css";
@@ -67,11 +68,7 @@ export default async function RootLayout({
             <main id="main-content" className="flex-1">
               <MatchFlowShell>{children}</MatchFlowShell>
             </main>
-            <footer className="border-t border-ink">
-              <div className="mx-auto max-w-[1440px] px-4 py-4 text-sm text-ink-muted sm:px-6 lg:px-10">
-                <p>Lean In Connect</p>
-              </div>
-            </footer>
+            <SiteFooter />
           </div>
         </ToastProvider>
       </body>

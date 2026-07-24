@@ -69,6 +69,7 @@ export function JoinRequestCTA({
       ) : null}
 
       <JoinRequestModal
+        key={circle.id}
         circle={circle}
         open={open}
         onClose={handleClose}

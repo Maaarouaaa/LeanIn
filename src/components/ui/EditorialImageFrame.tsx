@@ -9,7 +9,8 @@ const FRAME_STYLES: Record<
 > = {
   hero: {
     aspectRatio: "16 / 10",
-    borderRadius: "34% 10% 28% 14% / 16% 30% 12% 38%",
+    // Expressive left scoop; restrained right edge for layered hero overlap.
+    borderRadius: "34% 2rem 2rem 12% / 18% 2rem 2rem 38%",
   },
   feature: {
     aspectRatio: "16 / 9",

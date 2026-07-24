@@ -73,10 +73,13 @@ describe("Join request modal", () => {
     const { trigger, dialog } = await openModal(user);
     expect(document.body.style.overflow).toBe("hidden");
 
-    expect(dialog.className).toMatch(/max-h-\[calc\(100dvh-2rem\)\]/);
+    expect(dialog.className).toMatch(/max-h-\[calc\(100dvh-6rem\)\]/);
     expect(dialog.className).toMatch(/overflow-y-auto/);
     expect(dialog.className).toMatch(/overscroll-contain/);
     expect(dialog.className).toMatch(/touch-pan-y/);
+    expect(dialog.className).toMatch(/top-\[clamp\(5rem,8vh,7rem\)\]/);
+    expect(dialog.className).not.toMatch(/-translate-y-1\/2/);
+    expect(dialog.className).not.toMatch(/top-1\/2/);
 
     await user.keyboard("{Escape}");
     await waitFor(() => {
@@ -145,5 +148,23 @@ describe("Join request modal", () => {
     });
     expect(dialog.querySelector("[aria-live='polite']")).not.toBeNull();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("uses the current Circle leader in the note placeholder", async () => {
+    const user = userEvent.setup();
+    await openModal(user);
+
+    const leaderFirst =
+      circle.leader.name.split(/\s+/)[0] ?? circle.leader.name;
+    const textarea = screen.getByRole("textbox", {
+      name: /Include a short note/i,
+    });
+    expect(textarea).toHaveAttribute(
+      "placeholder",
+      `Share a short note with ${leaderFirst}…`,
+    );
+    expect(textarea.getAttribute("placeholder")).not.toMatch(
+      /growing into a broader team leadership role/i,
+    );
   });
 });

@@ -95,7 +95,7 @@ export function Modal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center sm:p-8">
+    <div className="fixed inset-0 z-50">
       {/* Overlay stays under the dialog and does not capture wheel/touch scroll. */}
       <button
         type="button"
@@ -112,16 +112,21 @@ export function Modal({
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
         className={cn(
-          "relative z-10 w-[calc(100%-0.5rem)] max-w-3xl max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain touch-pan-y rounded-t-3xl border border-ink bg-[linear-gradient(180deg,#efe8f8_0%,#ffffff_42%)] shadow-[var(--shadow-soft)] animate-scale-in sm:w-full sm:rounded-3xl",
-          "max-sm:min-h-[min(92dvh,calc(100dvh-2rem))]",
+          "fixed left-1/2 top-[clamp(5rem,8vh,7rem)] z-50 w-[calc(100%-2rem)] max-w-4xl -translate-x-1/2",
+          "max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain touch-pan-y",
+          "rounded-3xl border border-ink bg-[linear-gradient(180deg,#efe8f8_0%,#ffffff_42%)] shadow-[var(--shadow-soft)] animate-scale-in",
+          "max-sm:top-[clamp(4rem,6vh,5.5rem)] max-sm:max-h-[calc(100dvh-5rem)] max-sm:rounded-t-3xl",
           className,
         )}
         style={{ WebkitOverflowScrolling: "touch" }}
       >
-        <div className="sticky top-0 z-20 flex items-start justify-between gap-4 border-b border-ink/15 bg-[linear-gradient(180deg,#efe8f8_0%,#f7f2fb_100%)] px-5 py-5 sm:px-7">
-          <div className="space-y-2">
+        <div className="sticky top-0 z-20 flex items-start justify-between gap-3 border-b border-ink/15 bg-[linear-gradient(180deg,#efe8f8_0%,#f7f2fb_100%)] px-5 py-3.5 sm:px-6 sm:py-4">
+          <div className="min-w-0 space-y-1.5">
             <p className="type-eyebrow text-ink">Request to join</p>
-            <h2 id={titleId} className="type-section text-ink">
+            <h2
+              id={titleId}
+              className="font-display text-2xl font-semibold leading-tight tracking-tight text-ink sm:text-3xl"
+            >
               {title}
             </h2>
             {description ? (
@@ -141,10 +146,10 @@ export function Modal({
           </Button>
         </div>
 
-        <div className="px-5 py-5 sm:px-7">{children}</div>
+        <div className="px-5 py-4 sm:px-6 sm:py-5">{children}</div>
 
         {footer ? (
-          <div className="sticky bottom-0 z-20 border-t border-ink/15 bg-surface/95 px-5 py-4 backdrop-blur-sm sm:px-7">
+          <div className="sticky bottom-0 z-20 border-t border-ink/15 bg-surface/95 px-5 py-3 backdrop-blur-sm sm:px-6">
             {footer}
           </div>
         ) : null}

@@ -33,14 +33,14 @@ export function JoinRequestModal({
   const router = useRouter();
   const { pushToast } = useToast();
   const [note, setNote] = useState("");
-  const [privacyAck, setPrivacyAck] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const helpId = useId();
   const countId = useId();
   const statusId = useId();
-  const leaderFirstName = circle.leader.name.split(/\s+/)[0] ?? circle.leader.name;
+  const leaderFirstName =
+    circle.leader.name.split(/\s+/)[0] ?? circle.leader.name;
 
   useEffect(() => {
     if (!open) return;
@@ -115,9 +115,13 @@ export function JoinRequestModal({
       open={open}
       onClose={handleClose}
       title={circle.name}
-      description={`Share a short note with ${circle.leader.name} about why you’d like to join.`}
+      description={`Share a short note with ${leaderFirstName} about why you’d like to join.`}
       footer={
-        <div className="space-y-3">
+        <div className="space-y-2.5">
+          <p className="text-xs text-ink-muted">
+            Your note is visible only to the Circle leader. Your request will be
+            saved and can be reviewed later.
+          </p>
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <Button
               variant="secondary"
@@ -137,28 +141,25 @@ export function JoinRequestModal({
               Send request →
             </Button>
           </div>
-          <p className="text-xs text-ink-muted">
-            Your request will be saved and can be reviewed later.
-          </p>
         </div>
       }
     >
-      <form id="join-request-form" onSubmit={handleSubmit} className="space-y-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <form id="join-request-form" onSubmit={handleSubmit} className="space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <p id={helpId} className="max-w-md text-sm text-ink-soft">
             Share what drew you to the Circle or what you hope to learn. A short
-            note helps {circle.leader.name} understand whether this community is
-            the right fit for you.
+            note helps {leaderFirstName} understand whether this community is the
+            right fit for you.
           </p>
-          <div className="shrink-0 border border-ink bg-yellow px-4 py-3 text-ink">
+          <div className="shrink-0 border border-ink bg-yellow px-3 py-2.5 text-ink">
             <p className="type-meta font-semibold">Next meeting</p>
-            <p className="mt-1 text-xl font-semibold leading-none">
+            <p className="mt-0.5 text-lg font-semibold leading-none">
               {circle.nextMeeting}
             </p>
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <div className="flex items-baseline justify-between gap-3">
             <label htmlFor="join-note" className="text-sm font-bold text-ink">
               Include a short note to {leaderFirstName}
@@ -169,27 +170,19 @@ export function JoinRequestModal({
             ref={textareaRef}
             id="join-note"
             name="note"
-            placeholder="Hi Maya, I'm growing into a broader team leadership role and would value a thoughtful peer group for navigating influence and change."
+            rows={5}
+            placeholder={`Share a short note with ${leaderFirstName}…`}
             value={note}
             disabled={isPending}
             maxLength={MAX_NOTE_LENGTH}
             aria-describedby={`${helpId} ${countId}`}
+            className="min-h-36 max-h-56"
             onChange={(event) => setNote(event.target.value)}
           />
           <p id={countId} className="text-right text-xs text-ink-muted">
             {note.length} / {MAX_NOTE_LENGTH}
           </p>
         </div>
-
-        <label className="flex items-start gap-3 text-sm text-ink">
-          <input
-            type="checkbox"
-            className="mt-1 h-4 w-4 accent-[var(--ink)]"
-            checked={privacyAck}
-            onChange={(event) => setPrivacyAck(event.target.checked)}
-          />
-          <span>Your note is visible only to the Circle leader.</span>
-        </label>
 
         <div id={statusId} aria-live="polite" aria-atomic="true">
           {error ? (

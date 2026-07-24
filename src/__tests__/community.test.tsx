@@ -107,4 +107,19 @@ describe("Masthead community link", () => {
       "/community",
     );
   });
+
+  it("renders an accessible profile icon link instead of My Profile text", () => {
+    render(<Masthead dataMode="memory" />);
+    expect(screen.queryByText("My Profile")).not.toBeInTheDocument();
+    const profile = screen.getByRole("link", { name: "My profile" });
+    expect(profile).toHaveAttribute("href", "/match");
+    expect(profile).toHaveAttribute("title", "My profile");
+  });
+
+  it("uses the Lean In wordmark with home link", () => {
+    render(<Masthead dataMode="memory" />);
+    const logo = screen.getByRole("link", { name: "Lean In" });
+    expect(logo).toHaveAttribute("href", "/");
+    expect(screen.getByAltText("Lean In")).toBeInTheDocument();
+  });
 });

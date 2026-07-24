@@ -18,7 +18,6 @@ export default async function CommunityPage() {
     <div className="page-enter">
       <section className="border-b border-ink bg-yellow px-4 py-10 sm:px-6 lg:px-10 lg:py-14">
         <div className="mx-auto max-w-[1440px] space-y-3">
-          <p className="type-eyebrow text-ink">Lean In Connect</p>
           <h1 className="type-page text-ink">Explore all Circles</h1>
           <p className="measure font-editorial type-lead italic text-plum">
             Browse the complete community—every Circle, not only your top

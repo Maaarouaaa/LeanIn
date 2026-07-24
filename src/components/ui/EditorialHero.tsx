@@ -71,8 +71,8 @@ export function EditorialHero({
         className,
       )}
     >
-      <div className="mx-auto grid max-w-[1440px] lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="relative bg-yellow px-4 pb-10 pt-10 sm:px-8 lg:px-10 lg:pb-16 lg:pt-20">
+      <div className="relative mx-auto grid max-w-[1440px] overflow-hidden md:grid-cols-[46%_54%]">
+        <div className="relative z-10 bg-yellow px-4 pb-8 pt-10 sm:px-8 md:pb-12 lg:px-10 lg:pb-16 lg:pt-20">
           {outlineWord ? (
             <span className="outline-word absolute left-2 top-8 text-[22vw] leading-none lg:text-[8.5rem]">
               {outlineWord}
@@ -92,7 +92,7 @@ export function EditorialHero({
           </div>
         </div>
 
-        <div className="relative flex min-h-72 items-center bg-paper-deep p-4 sm:p-6 lg:min-h-full lg:p-8">
+        <div className="relative z-20 min-w-0 px-4 pb-8 pt-2 sm:px-6 md:-ml-10 md:w-[calc(100%+2.5rem)] md:px-6 md:pb-10 md:pt-12 lg:-ml-20 lg:w-[calc(100%+5rem)] lg:px-8 lg:pt-16 xl:-ml-24 xl:w-[calc(100%+6rem)]">
           {imageSrc ? (
             <EditorialImageFrame variant="hero" className="w-full">
               <Image
@@ -100,7 +100,7 @@ export function EditorialHero({
                 alt={imageAlt ?? ""}
                 fill
                 className="z-0 object-cover object-[50%_35%]"
-                sizes="(max-width: 1024px) 100vw, 50vw"
+                sizes="(max-width: 1024px) 100vw, 58vw"
                 priority
               />
             </EditorialImageFrame>
@@ -114,7 +114,7 @@ export function EditorialHero({
             </div>
           )}
           {badge ? (
-            <span className="absolute bottom-6 right-6 z-10 bg-ink px-3 py-1.5 type-meta font-medium text-white">
+            <span className="absolute bottom-6 right-6 z-10 bg-ink px-3 py-1.5 type-meta font-medium text-white lg:bottom-12 lg:right-10">
               {badge}
             </span>
           ) : null}
