@@ -339,10 +339,34 @@ export function explainTopMatch(match: CircleMatch): string {
   if (!primary) {
     return "This Circle aligns with several of your preferences.";
   }
-  // Prefer concise "Why this matches" copy
+
   if (primary.label === "Shared goals") {
-    return primary.detail.replace(/\.$/, "");
+    const overlap = match.reasons[0]?.detail ?? primary.detail;
+    // Turn "Goal A + Goal B + your location." into one specific sentence.
+    const cleaned = overlap.replace(/\.$/, "");
+    if (cleaned.includes(" + ")) {
+      const parts = cleaned.split(" + ").filter(Boolean);
+      const locationBit = parts.includes("your location");
+      const goals = parts.filter((part) => part !== "your location");
+      if (goals.length === 0) {
+        return primary.detail;
+      }
+      const goalPhrase =
+        goals.length === 1
+          ? goals[0]!.toLowerCase()
+          : goals.length === 2
+            ? `${goals[0]!.toLowerCase()} and ${goals[1]!.toLowerCase()}`
+            : `${goals
+                .slice(0, -1)
+                .map((goal) => goal.toLowerCase())
+                .join(", ")}, and ${goals.at(-1)!.toLowerCase()}`;
+      return locationBit
+        ? `You’re aligned on ${goalPhrase}, and this Circle meets near you.`
+        : `You’re aligned on ${goalPhrase}.`;
+    }
+    return cleaned.endsWith(".") ? cleaned : `${cleaned}.`;
   }
+
   return primary.detail;
 }
 

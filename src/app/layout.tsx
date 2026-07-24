@@ -69,7 +69,7 @@ export default async function RootLayout({
             <footer className="border-t border-ink">
               <div className="mx-auto flex max-w-[1440px] flex-col gap-2 px-4 py-6 text-sm text-ink-muted sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-10">
                 <p>Circle Match helps new members find a Circle that fits.</p>
-                <p>Demo profile · Amina Okonkwo</p>
+                <p>Lean In Connect</p>
               </div>
             </footer>
           </div>

@@ -2,6 +2,7 @@
 
 import { requireAuthenticatedMember } from "@/lib/auth";
 import { MAX_GOALS, MAX_NOTE_LENGTH } from "@/lib/constants";
+import { enrichCirclePresentation } from "@/lib/enrich-circle";
 import { rankCircleMatches } from "@/lib/matching";
 import { getDataStore } from "@/lib/data/store";
 import {
@@ -393,10 +394,12 @@ export async function getCircleBySlugAction(slug: string) {
   try {
     const memberId = await requireAuthenticatedMember();
     const store = await getDataStore();
-    const circle = await store.getCircleBySlug(slug);
-    if (!circle) {
+    const stored = await store.getCircleBySlug(slug);
+    if (!stored) {
       return { ok: false as const, error: "Circle not found." };
     }
+
+    const circle = enrichCirclePresentation(stored);
 
     const request = await store.getJoinRequest(memberId, circle.id);
     const profile = await store.getDemoProfile();

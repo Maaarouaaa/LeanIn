@@ -57,6 +57,8 @@ export interface CircleMemberPreview {
   name: string;
   role: string;
   initials: string;
+  imageSrc?: string;
+  imageAlt?: string;
 }
 
 export interface CircleLeader {
@@ -65,6 +67,12 @@ export interface CircleLeader {
   bio: string;
   initials: string;
   since?: string;
+  imageSrc?: string;
+  imageAlt?: string;
+  /** First-person quote for the leader profile. */
+  quote?: string;
+  /** One concrete detail about how she runs meetings. */
+  facilitationNote?: string;
 }
 
 export interface Circle {

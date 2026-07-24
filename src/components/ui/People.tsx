@@ -1,4 +1,12 @@
 import { cn } from "@/lib/cn";
+import {
+  CIRCLE_PORTRAIT_POOL,
+  remainingMemberCount,
+  resolveLeaderPortrait,
+  resolveMemberPortrait,
+} from "@/lib/circle-portraits";
+import type { Circle, CircleLeader, CircleMemberPreview } from "@/lib/types";
+import Image from "next/image";
 
 export function MatchBadge({
   score,
@@ -31,63 +39,125 @@ export function MatchBadge({
 export function MemberAvatars({
   members,
   memberCount,
+  circle,
 }: {
-  members: { name: string; initials: string }[];
+  members: CircleMemberPreview[];
   memberCount: number;
+  circle: Circle;
 }) {
+  // Always show four overlapping portraits; fill from the asset pool when needed.
+  const shown: CircleMemberPreview[] = [...members.slice(0, 4)];
+  let padIndex = 0;
+  while (shown.length < 4) {
+    const portrait =
+      CIRCLE_PORTRAIT_POOL.filter((item) => item.src !== circle.imageSrc)[
+        padIndex % Math.max(1, CIRCLE_PORTRAIT_POOL.length - 1)
+      ] ?? CIRCLE_PORTRAIT_POOL[0];
+    shown.push({
+      name: `Circle member ${shown.length + 1}`,
+      role: "Member",
+      initials: "•",
+      imageSrc: portrait.src,
+      imageAlt: portrait.alt,
+    });
+    padIndex += 1;
+  }
+
+  const remaining = remainingMemberCount(Math.max(memberCount, 4), shown.length);
+
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <ul className="flex -space-x-2">
-        {members.slice(0, 4).map((member) => (
-          <li
-            key={member.name}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-ink bg-paper text-xs font-bold"
-            title={member.name}
-          >
-            <span className="sr-only">{member.name}</span>
-            <span aria-hidden="true">{member.initials}</span>
-          </li>
-        ))}
+    <div className="flex items-center gap-3">
+      <ul className="flex items-center" aria-label="Circle members">
+        {shown.map((member, index) => {
+          const portrait = resolveMemberPortrait(member, index, circle);
+          return (
+            <li
+              key={`${member.name}-${index}`}
+              className={cn(
+                "relative h-12 w-12 overflow-hidden rounded-full border border-ink bg-paper-deep",
+                index > 0 && "-ml-3",
+              )}
+              style={{ zIndex: shown.length - index }}
+              title={
+                member.role === "Member"
+                  ? "Circle member"
+                  : `${member.name}, ${member.role}`
+              }
+            >
+              <Image
+                src={portrait.src}
+                alt={
+                  member.role === "Member"
+                    ? portrait.alt
+                    : `${member.name}, ${member.role}`
+                }
+                fill
+                className="object-cover"
+                sizes="48px"
+              />
+            </li>
+          );
+        })}
       </ul>
-      <p className="text-sm text-ink-muted">
-        {memberCount} members
-      </p>
+      {remaining > 0 ? (
+        <p
+          className="text-sm font-semibold text-ink"
+          aria-label={`${remaining} more members`}
+        >
+          +{remaining}
+        </p>
+      ) : null}
     </div>
   );
 }
 
 export function LeaderProfile({
   leader,
+  circle,
 }: {
-  leader: {
-    name: string;
-    title: string;
-    bio?: string;
-    initials: string;
-    since?: string;
-  };
+  leader: CircleLeader;
+  circle: Circle;
 }) {
+  const portrait = resolveLeaderPortrait(leader, circle);
+  const quote = leader.quote?.trim() || null;
+  const facilitationNote =
+    leader.facilitationNote?.trim() ||
+    (leader.since
+      ? `She has led this Circle since ${leader.since}, keeping each gathering focused on one live workplace situation.`
+      : null);
+
   return (
-    <div className="flex items-start gap-4">
-      <div
-        className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-ink bg-ink text-sm font-bold text-white"
-        aria-hidden="true"
-      >
-        {leader.initials}
+    <figure className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
+      <div className="relative h-40 w-32 shrink-0 overflow-hidden border border-ink bg-paper-deep sm:h-48 sm:w-36">
+        <Image
+          src={portrait.src}
+          alt={portrait.alt}
+          fill
+          className="object-cover object-[center_20%]"
+          sizes="(max-width: 640px) 128px, 144px"
+        />
       </div>
-      <div>
-        <p className="text-sm font-bold uppercase tracking-[0.12em] text-ink">
-          {leader.name}
-        </p>
-        <p className="mt-1 text-sm text-ink-muted">
-          {leader.title}
-          {leader.since ? ` · Circle Leader since ${leader.since}` : null}
-        </p>
-        {leader.bio ? (
-          <p className="mt-2 text-sm text-ink-soft">{leader.bio}</p>
+      <figcaption className="min-w-0 flex-1 space-y-3">
+        <div>
+          <p className="font-editorial text-xl text-ink sm:text-2xl">
+            {leader.name}
+          </p>
+          <p className="mt-1 text-sm text-ink-muted">{leader.title}</p>
+        </div>
+        {quote ? (
+          <blockquote className="border-l-2 border-ink pl-4 font-editorial text-base italic leading-relaxed text-ink-soft sm:text-lg">
+            “{quote}”
+          </blockquote>
+        ) : (
+          <p className="text-base leading-relaxed text-ink-soft">{leader.bio}</p>
+        )}
+        {facilitationNote ? (
+          <p className="text-sm leading-relaxed text-ink-soft">
+            {facilitationNote}
+          </p>
         ) : null}
-      </div>
-    </div>
+      </figcaption>
+    </figure>
   );
 }
 
