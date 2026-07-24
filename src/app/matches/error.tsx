@@ -24,8 +24,8 @@ export default function MatchesError({
         className="border border-error bg-error-soft px-6 py-10 text-error"
         role="alert"
       >
-        <h2 className="font-display text-3xl">Unable to load matches</h2>
-        <p className="mt-2 text-sm">
+        <h2 className="type-section">Unable to load matches</h2>
+        <p className="mt-2 type-meta">
           {error.message || "Something went wrong while loading your matches."}
         </p>
         <div className="mt-6 flex flex-wrap gap-3">

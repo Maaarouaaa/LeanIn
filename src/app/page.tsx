@@ -6,13 +6,9 @@ export default function HomePage() {
     <div className="page-enter">
       <section className="border-b border-ink bg-yellow px-4 py-16 sm:px-6 lg:px-10">
         <div className="mx-auto max-w-[1440px] space-y-5">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-ink">
-            Lean In Connect
-          </p>
-          <h1 className="max-w-3xl font-display text-6xl leading-[0.9] text-ink sm:text-7xl lg:text-8xl">
-            Find your people.
-          </h1>
-          <p className="max-w-xl font-editorial text-xl italic text-plum">
+          <p className="type-eyebrow text-ink">Lean In Connect</p>
+          <h1 className="type-display max-w-3xl text-ink">Find your people.</h1>
+          <p className="measure font-editorial type-lead italic text-plum">
             The right room can change what feels possible.
           </p>
           <div className="flex flex-col gap-3 pt-2 sm:flex-row">
@@ -51,11 +47,9 @@ export default function HomePage() {
             },
           ].map((item) => (
             <article key={item.step} className="border border-ink bg-surface p-6">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-ink-muted">
-                {item.step}
-              </p>
-              <h2 className="mt-3 font-display text-3xl text-ink">{item.title}</h2>
-              <p className="mt-3 text-sm text-ink-soft">{item.copy}</p>
+              <p className="type-eyebrow text-ink-muted">{item.step}</p>
+              <h2 className="mt-3 type-section text-ink">{item.title}</h2>
+              <p className="mt-3 type-body text-ink-soft">{item.copy}</p>
             </article>
           ))}
         </div>

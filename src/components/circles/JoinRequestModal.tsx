@@ -126,10 +126,8 @@ export function JoinRequestModal({
             the right fit for you.
           </p>
           <div className="shrink-0 border border-ink bg-yellow px-4 py-3 text-ink">
-            <p className="text-[11px] font-bold uppercase tracking-[0.14em]">
-              Next meeting
-            </p>
-            <p className="mt-1 font-display text-2xl leading-none">
+            <p className="type-meta font-semibold">Next meeting</p>
+            <p className="mt-1 text-xl font-semibold leading-none">
               {circle.nextMeeting}
             </p>
           </div>
@@ -140,7 +138,7 @@ export function JoinRequestModal({
             <label htmlFor="join-note" className="text-sm font-bold text-ink">
               Include a short note to {circle.leader.name.split(" ")[0]}
             </label>
-            <span className="font-editorial text-xs italic text-ink-muted">
+            <span className="type-meta italic text-ink-muted">
               Optional
             </span>
           </div>

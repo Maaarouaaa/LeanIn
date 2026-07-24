@@ -33,7 +33,7 @@ export function Field({
           {!optional ? <span className="text-error"> *</span> : null}
         </label>
         {optional ? (
-          <span className="font-editorial text-xs italic text-ink-muted">
+          <span className="type-meta italic text-ink-muted">
             Optional
           </span>
         ) : null}

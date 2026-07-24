@@ -111,14 +111,12 @@ export function Modal({
       >
         <div className="flex items-start justify-between gap-4 border-b border-ink/15 px-5 py-5 sm:px-7">
           <div className="space-y-2">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-ink">
-              Request to join
-            </p>
-            <h2 id={titleId} className="font-display text-3xl leading-none text-ink sm:text-4xl">
+            <p className="type-eyebrow text-ink">Request to join</p>
+            <h2 id={titleId} className="type-section text-ink">
               {title}
             </h2>
             {description ? (
-              <p id={descriptionId} className="text-sm text-ink-muted">
+              <p id={descriptionId} className="type-meta text-ink-muted">
                 {description}
               </p>
             ) : null}

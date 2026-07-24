@@ -24,7 +24,7 @@ export function Masthead({
     <header className="border-b border-ink bg-paper">
       {showFallbackBanner ? (
         <div
-          className="border-b border-ink/20 bg-lavender/40 px-4 py-2 text-center text-xs text-ink-soft"
+          className="border-b border-ink/20 bg-lavender/40 px-4 py-2 text-center type-meta text-ink-soft"
           role="status"
         >
           Development fallback: using in-memory data. Configure Supabase env
@@ -40,9 +40,7 @@ export function Masthead({
           >
             ✦
           </span>
-          <span className="text-sm font-bold uppercase tracking-[0.14em] text-ink">
-            Lean In Connect
-          </span>
+          <span className="text-sm font-semibold text-ink">Lean In Connect</span>
         </Link>
 
         <nav
@@ -59,9 +57,9 @@ export function Masthead({
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "relative pb-1 text-xs font-bold uppercase tracking-[0.18em] text-ink",
+                  "relative pb-1 type-meta font-medium text-ink",
                   active &&
-                    "after:absolute after:inset-x-0 after:-bottom-0.5 after:h-[3px] after:bg-[var(--error)]",
+                    "font-semibold after:absolute after:inset-x-0 after:-bottom-0.5 after:h-[3px] after:bg-[var(--error)]",
                 )}
               >
                 {item.label}
@@ -73,7 +71,7 @@ export function Masthead({
         <div className="flex items-center gap-2">
           <Link
             href="/match"
-            className="hidden min-h-11 items-center rounded-full bg-ink px-4 text-xs font-bold uppercase tracking-[0.14em] text-white sm:inline-flex"
+            className="hidden min-h-11 items-center rounded-full bg-ink px-4 type-meta font-semibold text-white sm:inline-flex"
           >
             My Profile
           </Link>
@@ -101,7 +99,7 @@ export function Masthead({
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="block px-2 py-3 text-sm font-bold uppercase tracking-[0.14em]"
+                  className="block px-2 py-3 text-sm font-medium"
                   onClick={() => setOpen(false)}
                 >
                   {item.label}

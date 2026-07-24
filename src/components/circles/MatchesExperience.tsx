@@ -63,8 +63,8 @@ export function MatchesExperience({
   if (!preferences && !error) {
     return (
       <div className="border border-ink bg-surface px-6 py-12 text-center">
-        <h2 className="font-display text-4xl text-ink">Start with preferences</h2>
-        <p className="mx-auto mt-3 max-w-lg text-ink-muted">
+        <h2 className="type-section text-ink">Start with preferences</h2>
+        <p className="mx-auto mt-3 max-w-lg type-body text-ink-muted">
           Tell us what support you need so we can rank Circles that fit.
         </p>
         <Link href="/match" className="mt-6 inline-block">
@@ -80,8 +80,8 @@ export function MatchesExperience({
         className="border border-error bg-error-soft px-6 py-10 text-error"
         role="alert"
       >
-        <h2 className="font-display text-3xl">Unable to load matches</h2>
-        <p className="mt-2 text-sm">{error}</p>
+        <h2 className="type-section">Unable to load matches</h2>
+        <p className="mt-2 type-meta">{error}</p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link href={submissionId ? `/matches?sid=${encodeURIComponent(submissionId)}` : "/matches"}>
             <Button variant="secondary">Retry</Button>
@@ -107,8 +107,8 @@ export function MatchesExperience({
           {announcement}
         </p>
         <div className="border border-ink bg-surface px-6 py-12 text-center">
-          <h2 className="font-display text-4xl text-ink">No Circles for this filter</h2>
-          <p className="mx-auto mt-3 max-w-lg text-ink-muted">
+          <h2 className="type-section text-ink">No Circles for this filter</h2>
+          <p className="mx-auto mt-3 max-w-lg type-body text-ink-muted">
             Try another filter, or edit your preferences to widen the match.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -162,9 +162,7 @@ function FilterBar({
   return (
     <div className="flex flex-col gap-4 border-b border-ink pb-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="space-y-2">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink">
-          Filter results
-        </p>
+        <p className="type-meta font-semibold text-ink">Filter results</p>
         <div
           className="flex gap-2 overflow-x-auto pb-1"
           role="group"
@@ -180,7 +178,7 @@ function FilterBar({
           ))}
         </div>
       </div>
-      <p className="text-sm text-ink-muted">Ranked by your saved preferences</p>
+      <p className="type-meta text-ink-muted">Ranked by your saved preferences</p>
     </div>
   );
 }

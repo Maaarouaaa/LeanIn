@@ -47,15 +47,11 @@ export function EditorialHero({
         <div className="relative z-10 mx-auto flex max-w-[1440px] flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl space-y-3">
             {eyebrow ? (
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-ink">
-                {eyebrow}
-              </p>
+              <p className="type-eyebrow text-ink">{eyebrow}</p>
             ) : null}
-            <h1 className="font-display text-5xl leading-[0.9] text-ink sm:text-6xl lg:text-7xl">
-              {title}
-            </h1>
+            <h1 className="type-page text-ink">{title}</h1>
             {editorial ? (
-              <p className="font-editorial text-xl italic text-plum sm:text-2xl">
+              <p className="measure font-editorial type-lead italic text-plum">
                 {editorial}
               </p>
             ) : null}
@@ -86,15 +82,11 @@ export function EditorialHero({
           ) : null}
           <div className="relative z-10 max-w-xl space-y-4">
             {eyebrow ? (
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-ink">
-                {eyebrow}
-              </p>
+              <p className="type-eyebrow text-ink">{eyebrow}</p>
             ) : null}
-            <h1 className="font-display text-5xl leading-[0.88] text-ink sm:text-6xl lg:text-7xl">
-              {title}
-            </h1>
+            <h1 className="type-display text-ink">{title}</h1>
             {editorial ? (
-              <p className="font-editorial text-xl italic text-plum sm:text-2xl">
+              <p className="measure font-editorial type-lead italic text-plum">
                 {editorial}
               </p>
             ) : null}
@@ -121,7 +113,7 @@ export function EditorialHero({
             </div>
           ) : null}
           {badge ? (
-            <span className="absolute bottom-6 right-6 z-10 bg-ink px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-white">
+            <span className="absolute bottom-6 right-6 z-10 bg-ink px-3 py-1.5 type-meta font-medium text-white">
               {badge}
             </span>
           ) : null}

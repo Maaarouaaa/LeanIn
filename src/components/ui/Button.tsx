@@ -44,7 +44,7 @@ export function Button({
       {...props}
       type={type}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-full font-semibold tracking-wide transition-colors motion-safe-transition disabled:cursor-not-allowed",
+        "inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-colors motion-safe-transition disabled:cursor-not-allowed",
         variantClasses[variant],
         sizeClasses[size],
         className,

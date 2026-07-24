@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Bebas_Neue, Libre_Baskerville, IBM_Plex_Sans } from "next/font/google";
+import { Barlow_Condensed, Newsreader, IBM_Plex_Sans } from "next/font/google";
 import { connection } from "next/server";
 import { Masthead } from "@/components/layout/Masthead";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -13,16 +13,16 @@ const productSans = IBM_Plex_Sans({
   display: "swap",
 });
 
-const display = Bebas_Neue({
+const display = Barlow_Condensed({
   subsets: ["latin"],
-  weight: "400",
+  weight: ["500", "600", "700"],
   variable: "--font-display",
   display: "swap",
 });
 
-const editorial = Libre_Baskerville({
+const editorial = Newsreader({
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
   variable: "--font-editorial",
   display: "swap",

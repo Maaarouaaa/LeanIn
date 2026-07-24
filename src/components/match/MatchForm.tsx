@@ -249,7 +249,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
         <div className="flex flex-col gap-3 border-b border-ink pb-4 sm:flex-row sm:items-end sm:justify-between">
           <h2
             id="support-goals-title"
-            className="font-display text-3xl text-ink sm:text-4xl"
+            className="type-section text-ink"
           >
             01 What kind of support are you looking for?
           </h2>
@@ -303,7 +303,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
       <section className="space-y-6" aria-labelledby="details-title">
         <h2
           id="details-title"
-          className="border-b border-ink pb-4 font-display text-3xl text-ink sm:text-4xl"
+          className="border-b border-ink pb-4 type-section text-ink"
         >
           02 Help us find a Circle that fits your life
         </h2>
@@ -410,7 +410,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
         </div>
 
         <fieldset className="space-y-3">
-          <legend className="text-sm font-bold uppercase tracking-[0.14em] text-ink">
+          <legend className="type-meta font-semibold text-ink">
             Preferred format <span className="text-error">*</span>
           </legend>
           <div className="flex flex-wrap gap-2">

@@ -22,6 +22,10 @@ function formatLabel(format: string): string {
   return format;
 }
 
+function leaderFirstName(name: string): string {
+  return name.trim().split(/\s+/)[0] || name;
+}
+
 export async function generateMetadata({
   params,
 }: CirclePageProps): Promise<Metadata> {
@@ -39,17 +43,19 @@ export default async function CircleDetailPage({ params }: CirclePageProps) {
     if (result.error === "Circle not found.") notFound();
     return (
       <div className="mx-auto max-w-3xl px-4 py-16 text-error" role="alert">
-        <h1 className="font-display text-4xl">Something went wrong</h1>
-        <p className="mt-2 text-sm">{result.error}</p>
+        <h1 className="type-section text-error">Something went wrong</h1>
+        <p className="mt-2 type-meta">{result.error}</p>
       </div>
     );
   }
 
   const { circle, request, match } = result.data;
   const matchSentence = match ? explainTopMatch(match) : null;
-  const topicSentence = circle.topics
-    .map((topic) => GOAL_LABELS[topic] ?? topic)
-    .join(" · ");
+  const topicLabels = circle.topics.map(
+    (topic) => GOAL_LABELS[topic] ?? topic,
+  );
+  const locationCity = circle.location.split("·")[0]?.trim() ?? circle.location;
+  const leaderGivenName = leaderFirstName(circle.leader.name);
 
   return (
     <div className="page-enter">
@@ -59,36 +65,31 @@ export default async function CircleDetailPage({ params }: CirclePageProps) {
         </div>
       </div>
 
-      {/* Hero — brand title + match highlight; yellow reserved for match + CTA */}
       <section className="relative overflow-hidden">
         <div className="mx-auto grid max-w-[1440px] lg:grid-cols-[1.05fr_0.95fr]">
           <div className="space-y-5 px-4 pb-10 pt-2 sm:px-6 lg:px-10 lg:pb-14">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-ink-muted">
-              {circle.category}
+            <p className="type-eyebrow text-ink-muted">
+              {circle.category} · {locationCity}
             </p>
 
             <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
-              <h1 className="max-w-xl font-display text-5xl leading-[0.9] text-ink sm:text-6xl lg:text-7xl">
-                {circle.name}
-              </h1>
+              <h1 className="type-page max-w-xl text-ink">{circle.name}</h1>
               {match ? (
-                <span className="mb-1 inline-flex items-baseline gap-1.5 border border-ink bg-yellow px-2.5 py-1">
-                  <span className="font-editorial text-2xl font-bold leading-none text-ink">
+                <span className="mb-1 inline-flex items-baseline gap-1.5 border border-ink bg-yellow px-2.5 py-1 font-product">
+                  <span className="text-2xl font-semibold leading-none text-ink">
                     {match.score}%
                   </span>
-                  <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink">
-                    match
-                  </span>
+                  <span className="type-meta font-medium text-ink">match</span>
                 </span>
               ) : null}
             </div>
 
             {matchSentence ? (
-              <p className="max-w-xl font-editorial text-lg italic leading-snug text-plum">
+              <p className="measure font-editorial type-lead italic text-plum">
                 {matchSentence}
               </p>
             ) : (
-              <p className="max-w-xl text-lg leading-relaxed text-ink-soft">
+              <p className="measure font-editorial type-lead text-ink-soft">
                 {circle.description}
               </p>
             )}
@@ -109,36 +110,42 @@ export default async function CircleDetailPage({ params }: CirclePageProps) {
         </div>
       </section>
 
-      {/* Lower half — 7/5 editorial composition */}
       <div className="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-10 lg:py-14">
         <div className="grid gap-12 lg:grid-cols-[7fr_5fr] lg:gap-16 xl:gap-20">
-          {/* Left: continuous editorial story */}
           <article className="min-w-0">
-            <header className="space-y-5">
-              <h2 className="font-display text-3xl text-ink sm:text-4xl">
-                Inside the Circle
-              </h2>
-              <div className="h-px w-24 bg-ink" aria-hidden="true" />
-              <div className="max-w-2xl space-y-5 text-base leading-relaxed text-ink-soft sm:text-lg">
-                <p>{circle.description}</p>
-                <p className="font-editorial text-lg italic leading-relaxed text-ink sm:text-xl">
-                  {circle.whoItsFor}
-                </p>
-                <p>
-                  <span className="font-semibold text-ink">What you’ll work on: </span>
-                  {topicSentence}.
-                </p>
-              </div>
-            </header>
+            <div className="measure space-y-5">
+              <p className="font-editorial type-lead text-ink-soft">
+                {circle.description}
+              </p>
+              <p className="font-editorial type-lead italic text-ink">
+                {circle.whoItsFor}
+              </p>
+            </div>
 
-            <section className="mt-12 space-y-4" aria-labelledby="people-heading">
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <h3
-                  id="people-heading"
-                  className="font-editorial text-xl text-ink"
-                >
-                  Who’s already here
-                </h3>
+            <section className="mt-12 space-y-4" aria-labelledby="topics-heading">
+              <h2 id="topics-heading" className="type-section text-ink">
+                What we talk about
+              </h2>
+              <ul className="flex flex-wrap gap-2" aria-label="Circle topics">
+                {topicLabels.map((label) => (
+                  <li
+                    key={label}
+                    className="border border-ink/25 bg-paper-deep px-3 py-1.5 type-meta font-medium text-ink"
+                  >
+                    {label}
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section
+              className="mt-14 space-y-5"
+              aria-labelledby="people-heading"
+            >
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                <h2 id="people-heading" className="type-section text-ink">
+                  Meet the Circle
+                </h2>
                 <MemberAvatars
                   members={circle.members}
                   memberCount={circle.memberCount}
@@ -147,77 +154,67 @@ export default async function CircleDetailPage({ params }: CirclePageProps) {
               </div>
             </section>
 
-            <section className="mt-14 space-y-5" aria-labelledby="leader-heading">
-              <h3
-                id="leader-heading"
-                className="font-editorial text-xl text-ink"
-              >
-                Led by
-              </h3>
+            <section
+              className="mt-14 space-y-5"
+              aria-labelledby="leader-heading"
+            >
+              <h2 id="leader-heading" className="type-section text-ink">
+                Led by {leaderGivenName}
+              </h2>
               <LeaderProfile leader={circle.leader} circle={circle} />
             </section>
 
-            <div className="mt-10 pt-2">
+            <div className="mt-10">
               <Link
                 href="/matches"
-                className="text-sm font-semibold text-ink underline-offset-4 hover:underline"
+                className="type-meta font-semibold text-ink underline-offset-4 hover:underline"
               >
                 ← Back to your matches
               </Link>
             </div>
           </article>
 
-          {/* Right: compact meeting rail */}
           <aside className="lg:pt-1">
-            <div className="space-y-8 border border-ink bg-surface px-5 py-6 sm:px-6 lg:sticky lg:top-6">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-muted">
-                  Meeting details
-                </p>
-                <dl className="mt-4 space-y-5">
-                  <div>
-                    <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                      Where
-                    </dt>
-                    <dd className="mt-1 text-sm leading-snug text-ink">
-                      {circle.location}
-                      <span className="text-ink-muted">
-                        {" "}
-                        · {formatLabel(circle.format)}
-                      </span>
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                      Cadence
-                    </dt>
-                    <dd className="mt-1 text-sm leading-snug text-ink">
-                      {circle.schedule}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                      Next gathering
-                    </dt>
-                    <dd className="mt-1 font-editorial text-lg italic text-ink">
-                      {circle.nextMeeting}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
+            <div className="space-y-7 border border-ink bg-surface px-5 py-6 sm:px-6 lg:sticky lg:top-6">
+              <dl className="space-y-5">
+                <div>
+                  <dt className="type-meta font-semibold text-ink">
+                    Location and format
+                  </dt>
+                  <dd className="mt-1 type-body text-ink-soft">
+                    {circle.location}
+                    <span className="text-ink-muted">
+                      {" "}
+                      · {formatLabel(circle.format)}
+                    </span>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="type-meta font-semibold text-ink">Schedule</dt>
+                  <dd className="mt-1 type-body text-ink-soft">
+                    {circle.schedule}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="type-meta font-semibold text-ink">
+                    Next meeting
+                  </dt>
+                  <dd className="mt-1 type-body font-medium text-ink">
+                    {circle.nextMeeting}
+                  </dd>
+                </div>
+              </dl>
 
               {matchSentence ? (
-                <div className="border-t border-ink/20 pt-6">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-muted">
+                <div className="border-t border-ink/15 pt-6">
+                  <p className="type-meta font-semibold text-ink">
                     Why this match
                   </p>
-                  <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-                    {matchSentence}
-                  </p>
+                  <p className="mt-2 type-body text-ink-soft">{matchSentence}</p>
                 </div>
               ) : null}
 
-              <div className="border-t border-ink/20 pt-6">
+              <div className="border-t border-ink/15 pt-6">
                 <JoinRequestCTA
                   circle={circle}
                   initialRequest={request}

@@ -13,45 +13,39 @@ export function FeaturedMatchCard({ match }: { match: CircleMatch }) {
     <article className="overflow-hidden rounded-2xl border border-ink bg-ink text-white">
       <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-5 p-6 sm:p-8">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-yellow">
-            Top match
-          </p>
-          <h2 className="font-display text-4xl leading-[0.92] sm:text-5xl">
+          <p className="type-eyebrow text-yellow">Top match</p>
+          <h2 className="font-editorial text-[clamp(1.75rem,3vw,2.5rem)] font-semibold leading-tight">
             {circle.name}
           </h2>
-          <p className="max-w-xl text-base text-white/85">{circle.description}</p>
-          <dl className="grid gap-4 text-sm sm:grid-cols-3">
+          <p className="measure type-body text-white/85">{circle.description}</p>
+          <dl className="grid gap-4 type-meta sm:grid-cols-3">
             <div>
-              <dt className="text-white/55">Format</dt>
-              <dd className="mt-1">
+              <dt className="font-medium text-white/55">Format</dt>
+              <dd className="mt-1 text-white/90">
                 {circle.location} ·{" "}
                 {circle.format === "in-person" ? "In person" : circle.format}
               </dd>
             </div>
             <div>
-              <dt className="text-white/55">Schedule</dt>
-              <dd className="mt-1">{circle.schedule}</dd>
+              <dt className="font-medium text-white/55">Schedule</dt>
+              <dd className="mt-1 text-white/90">{circle.schedule}</dd>
             </div>
             <div>
-              <dt className="text-white/55">Members</dt>
-              <dd className="mt-1">{circle.memberCount} members</dd>
+              <dt className="font-medium text-white/55">Members</dt>
+              <dd className="mt-1 text-white/90">{circle.memberCount} members</dd>
             </div>
           </dl>
           <div className="inline-block border border-ink bg-yellow px-3 py-2 text-ink">
-            <p className="text-[11px] font-bold uppercase tracking-[0.14em]">
-              Why this matches
-            </p>
-            <p className="mt-1 text-sm font-medium">{why}</p>
+            <p className="type-meta font-semibold">Why this matches</p>
+            <p className="mt-1 type-meta font-medium">{why}</p>
           </div>
         </div>
 
         <div className="relative min-h-72">
           <div className="absolute right-5 top-0 z-10 -translate-y-1/4">
             <div className="border border-ink bg-yellow px-3 py-4 text-center text-ink">
-              <p className="font-display text-3xl leading-none">{score}%</p>
-              <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.14em]">
-                Match
-              </p>
+              <p className="text-3xl font-semibold leading-none">{score}%</p>
+              <p className="mt-1 type-meta font-medium">Match</p>
             </div>
           </div>
           <div className="absolute inset-4 overflow-hidden organic-mask-wide sm:inset-6">
@@ -99,20 +93,18 @@ export function SecondaryMatchCard({
         />
       </div>
       <div className="space-y-3 p-5">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-muted">
-          {circle.category}
-        </p>
-        <h3 className="font-display text-2xl leading-none text-ink">
+        <p className="type-eyebrow text-ink-muted">{circle.category}</p>
+        <h3 className="font-editorial text-2xl font-semibold leading-snug text-ink">
           {circle.name}
         </h3>
-        <p className="text-sm text-ink-soft">{why}</p>
-        <p className="text-sm text-ink-muted">
+        <p className="type-body text-ink-soft">{why}</p>
+        <p className="type-meta text-ink-muted">
           {circle.format === "in-person" ? circle.location : "Virtual"} ·{" "}
           {circle.schedule} · {circle.memberCount} members
         </p>
         <Link
           href={`/circles/${circle.slug}`}
-          className="inline-flex min-h-11 items-center text-sm font-bold uppercase tracking-[0.12em] text-ink underline-offset-4 hover:underline"
+          className="inline-flex min-h-11 items-center type-meta font-semibold text-ink underline-offset-4 hover:underline"
         >
           View Circle →
         </Link>

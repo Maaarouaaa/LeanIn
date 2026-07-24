@@ -45,7 +45,7 @@ export function ProgressTracker({
                 </span>
                 <span
                   className={cn(
-                    "text-[11px] font-bold uppercase tracking-[0.14em]",
+                    "type-meta font-medium",
                     current ? "text-ink" : "text-ink-muted",
                   )}
                 >

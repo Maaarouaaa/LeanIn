@@ -26,7 +26,7 @@ export function MatchBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center border border-ink px-2.5 py-1 text-xs font-bold uppercase tracking-[0.12em]",
+        "inline-flex items-center border border-ink px-2.5 py-1 type-meta font-semibold",
         tones[tone],
         className,
       )}
@@ -101,7 +101,7 @@ export function MemberAvatars({
       </ul>
       {remaining > 0 ? (
         <p
-          className="text-sm font-semibold text-ink"
+          className="type-meta font-semibold text-ink"
           aria-label={`${remaining} more members`}
         >
           +{remaining}
@@ -139,22 +139,20 @@ export function LeaderProfile({
       </div>
       <figcaption className="min-w-0 flex-1 space-y-3">
         <div>
-          <p className="font-editorial text-xl text-ink sm:text-2xl">
+          <p className="text-xl font-semibold text-ink sm:text-2xl">
             {leader.name}
           </p>
-          <p className="mt-1 text-sm text-ink-muted">{leader.title}</p>
+          <p className="mt-1 type-meta text-ink-muted">{leader.title}</p>
         </div>
         {quote ? (
-          <blockquote className="border-l-2 border-ink pl-4 font-editorial text-base italic leading-relaxed text-ink-soft sm:text-lg">
+          <blockquote className="measure border-l-2 border-ink pl-4 font-editorial type-lead italic text-ink-soft">
             “{quote}”
           </blockquote>
         ) : (
-          <p className="text-base leading-relaxed text-ink-soft">{leader.bio}</p>
+          <p className="measure type-body text-ink-soft">{leader.bio}</p>
         )}
         {facilitationNote ? (
-          <p className="text-sm leading-relaxed text-ink-soft">
-            {facilitationNote}
-          </p>
+          <p className="measure type-meta text-ink-soft">{facilitationNote}</p>
         ) : null}
       </figcaption>
     </figure>
