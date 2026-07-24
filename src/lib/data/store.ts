@@ -14,84 +14,79 @@ import {
 
 type DataMode = DataStore["mode"];
 
-let cachedMode: DataMode | null = null;
-let resolvePromise: Promise<DataMode> | null = null;
+let cachedStore: DataStore | null = null;
+let resolvePromise: Promise<DataStore> | null = null;
 
 /**
- * Trace:
- * layout.tsx -> getDataMode()/resolveDataMode()
- * actions/API -> getDataStore() -> resolveDataMode()
- * resolveDataMode() checks env, probes public.circles, then selects adapter.
+ * Single source of truth for repository selection.
+ * getDataMode() always returns the `.mode` of the store returned here.
  */
-export async function resolveDataMode(): Promise<DataMode> {
-  if (cachedMode) return cachedMode;
+export async function getDataStore(): Promise<DataStore> {
+  if (cachedStore) return cachedStore;
   if (resolvePromise) return resolvePromise;
 
-  resolvePromise = (async () => {
-    const envPresent = getSupabaseEnvPresence();
-    console.info("[circle-match] Supabase env present:", envPresent);
-
-    if (!hasRequiredSupabaseEnv()) {
-      console.info(
-        "[circle-match] repository adapter selected: memory (missing NEXT_PUBLIC_SUPABASE_URL and/or NEXT_PUBLIC_SUPABASE_ANON_KEY)",
-      );
-      cachedMode = "memory";
-      return cachedMode;
-    }
-
-    try {
-      resetSupabaseClient();
-      const supabase = createSupabaseClient();
-      const { data, error } = await supabase
-        .from("circles")
-        .select("id, slug")
-        .limit(1);
-
-      if (error) {
-        logSupabaseError("Supabase circles probe failed", error);
-        console.info(
-          "[circle-match] repository adapter selected: memory (probe query failed)",
-        );
-        cachedMode = "memory";
-        return cachedMode;
-      }
-
-      console.info("[circle-match] Supabase circles probe succeeded", {
-        rowCount: data?.length ?? 0,
-        sampleSlug: data?.[0]?.slug ?? null,
-      });
-      console.info("[circle-match] repository adapter selected: supabase");
-      cachedMode = "supabase";
-      return cachedMode;
-    } catch (error) {
-      const formatted = formatSupabaseError(error);
-      console.error(
-        "[circle-match] Supabase initialization error:",
-        formatted,
-      );
-      console.info(
-        "[circle-match] repository adapter selected: memory (initialization threw)",
-      );
-      cachedMode = "memory";
-      return cachedMode;
-    }
-  })();
-
+  resolvePromise = selectDataStore();
   return resolvePromise;
 }
 
-export async function getDataStore(): Promise<DataStore> {
-  const mode = await resolveDataMode();
-  return mode === "supabase" ? supabaseStore : memoryStore;
+async function selectDataStore(): Promise<DataStore> {
+  const envPresent = getSupabaseEnvPresence();
+  console.info("[circle-match] Supabase env present:", envPresent);
+
+  if (!hasRequiredSupabaseEnv()) {
+    console.info(
+      "[circle-match] repository adapter selected: memory (missing NEXT_PUBLIC_SUPABASE_URL and/or NEXT_PUBLIC_SUPABASE_ANON_KEY)",
+    );
+    cachedStore = memoryStore;
+    return cachedStore;
+  }
+
+  try {
+    resetSupabaseClient();
+    const supabase = createSupabaseClient();
+    const { data, error } = await supabase
+      .from("circles")
+      .select("id, slug")
+      .limit(1);
+
+    if (error) {
+      logSupabaseError("Supabase circles probe failed", error);
+      console.info(
+        "[circle-match] repository adapter selected: memory (probe query failed)",
+      );
+      cachedStore = memoryStore;
+      return cachedStore;
+    }
+
+    console.info("[circle-match] Supabase circles probe succeeded", {
+      rowCount: data?.length ?? 0,
+      sampleSlug: data?.[0]?.slug ?? null,
+    });
+    console.info("[circle-match] repository adapter selected: supabase");
+    cachedStore = supabaseStore;
+    return cachedStore;
+  } catch (error) {
+    console.error(
+      "[circle-match] Supabase initialization error:",
+      formatSupabaseError(error),
+    );
+    console.info(
+      "[circle-match] repository adapter selected: memory (initialization threw)",
+    );
+    cachedStore = memoryStore;
+    return cachedStore;
+  }
 }
 
+/** Mode of the repository actually selected by getDataStore(). */
 export async function getDataMode(): Promise<DataMode> {
-  return resolveDataMode();
+  const store = await getDataStore();
+  return store.mode;
 }
 
-/** Test helper — clears cached adapter selection. */
+/** Test helper — clears cached repository selection. */
 export function resetDataModeCache() {
-  cachedMode = null;
+  cachedStore = null;
   resolvePromise = null;
   resetSupabaseClient();
 }

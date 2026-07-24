@@ -18,10 +18,11 @@ export function Masthead({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const showFallbackBanner = dataMode === "memory";
 
   return (
     <header className="border-b border-ink bg-paper">
-      {dataMode === "memory" ? (
+      {showFallbackBanner ? (
         <div
           className="border-b border-ink/20 bg-lavender/40 px-4 py-2 text-center text-xs text-ink-soft"
           role="status"
