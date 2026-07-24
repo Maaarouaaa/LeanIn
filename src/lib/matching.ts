@@ -3,6 +3,7 @@ import {
   GOAL_LABELS,
   CAREER_STAGE_LABELS,
 } from "@/lib/constants";
+import { debugLog } from "@/lib/debug";
 import type {
   AvailabilityWindow,
   Circle,
@@ -283,11 +284,11 @@ export function rankCircleMatches(
 ): CircleMatch[] {
   // Materialize a finite array — never iterate an open-ended source.
   const list = Array.isArray(circles) ? circles.slice() : [];
-  console.info("[circle-match] stage:rank.circlesRetrieved", {
+  debugLog("[circle-match] stage:rank.circlesRetrieved", {
     count: list.length,
   });
 
-  console.info("[circle-match] stage:rank.scoreCalculation start", {
+  debugLog("[circle-match] stage:rank.scoreCalculation start", {
     count: list.length,
   });
   const scored: CircleMatch[] = [];
@@ -304,22 +305,22 @@ export function rankCircleMatches(
       scored.push({ circle, score: 0, reasons: [] });
     }
   }
-  console.info("[circle-match] stage:rank.scoreCalculation end", {
+  debugLog("[circle-match] stage:rank.scoreCalculation end", {
     scoredCount: scored.length,
   });
 
-  console.info("[circle-match] stage:rank.sort start", {
+  debugLog("[circle-match] stage:rank.sort start", {
     scoredCount: scored.length,
   });
   scored.sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
     return a.circle.name.localeCompare(b.circle.name);
   });
-  console.info("[circle-match] stage:rank.sort end", {
+  debugLog("[circle-match] stage:rank.sort end", {
     scoredCount: scored.length,
   });
 
-  console.info("[circle-match] stage:rank.results", {
+  debugLog("[circle-match] stage:rank.results", {
     returned: scored.length,
   });
   return scored;
@@ -339,10 +340,34 @@ export function explainTopMatch(match: CircleMatch): string {
   if (!primary) {
     return "This Circle aligns with several of your preferences.";
   }
-  // Prefer concise "Why this matches" copy
+
   if (primary.label === "Shared goals") {
-    return primary.detail.replace(/\.$/, "");
+    const overlap = match.reasons[0]?.detail ?? primary.detail;
+    // Turn "Goal A + Goal B + your location." into one specific sentence.
+    const cleaned = overlap.replace(/\.$/, "");
+    if (cleaned.includes(" + ")) {
+      const parts = cleaned.split(" + ").filter(Boolean);
+      const locationBit = parts.includes("your location");
+      const goals = parts.filter((part) => part !== "your location");
+      if (goals.length === 0) {
+        return primary.detail;
+      }
+      const goalPhrase =
+        goals.length === 1
+          ? goals[0]!.toLowerCase()
+          : goals.length === 2
+            ? `${goals[0]!.toLowerCase()} and ${goals[1]!.toLowerCase()}`
+            : `${goals
+                .slice(0, -1)
+                .map((goal) => goal.toLowerCase())
+                .join(", ")}, and ${goals.at(-1)!.toLowerCase()}`;
+      return locationBit
+        ? `You’re aligned on ${goalPhrase}, and this Circle meets near you.`
+        : `You’re aligned on ${goalPhrase}.`;
+    }
+    return cleaned.endsWith(".") ? cleaned : `${cleaned}.`;
   }
+
   return primary.detail;
 }
 

@@ -1,6 +1,8 @@
 "use client";
 
+import { UserRound } from "@/components/icons/UserRound";
 import { cn } from "@/lib/cn";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -8,8 +10,17 @@ import { useState } from "react";
 const NAV_ITEMS = [
   { href: "/match", label: "Match" },
   { href: "/matches", label: "Circles" },
-  { href: "/#community", label: "Community" },
+  { href: "/community", label: "Community" },
 ];
+
+function isActive(pathname: string, href: string) {
+  if (href === "/community") return pathname.startsWith("/community");
+  if (href === "/matches")
+    return pathname === "/matches" || pathname.startsWith("/matches/");
+  if (href === "/match")
+    return pathname === "/match" || pathname.startsWith("/match/");
+  return pathname === href;
+}
 
 export function Masthead({
   dataMode,
@@ -24,7 +35,7 @@ export function Masthead({
     <header className="border-b border-ink bg-paper">
       {showFallbackBanner ? (
         <div
-          className="border-b border-ink/20 bg-lavender/40 px-4 py-2 text-center text-xs text-ink-soft"
+          className="border-b border-ink/20 bg-lavender/40 px-4 py-2 text-center type-meta text-ink-soft"
           role="status"
         >
           Development fallback: using in-memory data. Configure Supabase env
@@ -32,36 +43,35 @@ export function Masthead({
         </div>
       ) : null}
 
-      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-10">
-        <Link href="/" className="flex items-center gap-2">
-          <span
-            aria-hidden="true"
-            className="inline-flex h-7 w-7 items-center justify-center text-xl leading-none"
-          >
-            ✦
-          </span>
-          <span className="text-sm font-bold uppercase tracking-[0.14em] text-ink">
-            Lean In Connect
-          </span>
+      <div className="mx-auto grid max-w-[1440px] grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-3 sm:px-6 lg:px-10">
+        <Link
+          href="/"
+          className="inline-flex items-center justify-self-start py-1"
+        >
+          <Image
+            src="/assets/brand/lean-in-wordmark.svg"
+            alt="Lean In"
+            width={160}
+            height={36}
+            priority
+            className="h-7 w-auto sm:h-8"
+          />
         </Link>
 
         <nav
-          className="hidden items-center gap-8 md:flex"
+          className="hidden items-center gap-8 justify-self-center md:flex"
           aria-label="Primary"
         >
           {NAV_ITEMS.map((item) => {
-            const active =
-              pathname === item.href ||
-              (item.href !== "/#community" &&
-                pathname.startsWith(item.href));
+            const active = isActive(pathname, item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "relative pb-1 text-xs font-bold uppercase tracking-[0.18em] text-ink",
+                  "relative pb-1 type-meta font-medium text-ink",
                   active &&
-                    "after:absolute after:inset-x-0 after:-bottom-0.5 after:h-[3px] after:bg-[var(--error)]",
+                    "font-semibold after:absolute after:inset-x-0 after:-bottom-0.5 after:h-[3px] after:bg-[var(--error)]",
                 )}
               >
                 {item.label}
@@ -70,16 +80,18 @@ export function Masthead({
           })}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2 justify-self-end">
           <Link
             href="/match"
-            className="hidden min-h-11 items-center rounded-full bg-ink px-4 text-xs font-bold uppercase tracking-[0.14em] text-white sm:inline-flex"
+            aria-label="My profile"
+            title="My profile"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-ink text-white transition-colors hover:bg-yellow hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink active:bg-yellow-deep active:text-ink"
           >
-            My Profile
+            <UserRound aria-hidden="true" className="h-5 w-5" />
           </Link>
           <button
             type="button"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center border border-ink md:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center border border-ink md:hidden"
             aria-expanded={open}
             aria-controls="mobile-nav"
             onClick={() => setOpen((value) => !value)}
@@ -101,7 +113,7 @@ export function Masthead({
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="block px-2 py-3 text-sm font-bold uppercase tracking-[0.14em]"
+                  className="block px-2 py-3 text-sm font-medium"
                   onClick={() => setOpen(false)}
                 >
                   {item.label}

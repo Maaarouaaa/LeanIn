@@ -44,7 +44,6 @@ describe("MatchForm submission", () => {
       ...window.location,
       assign: locationAssign,
     });
-    vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
@@ -66,10 +65,6 @@ describe("MatchForm submission", () => {
 
     await user.click(submit);
 
-    expect(console.log).toHaveBeenCalledWith(
-      "[circle-match] MatchForm onSubmit fired",
-      expect.objectContaining({ submissionId: expect.any(String) }),
-    );
     expect(saveMemberPreferences).not.toHaveBeenCalled();
     expect(
       screen.getByRole("button", { name: /Find my Circles/i }),
@@ -95,11 +90,6 @@ describe("MatchForm submission", () => {
     await fillValidForm(user);
 
     await user.click(screen.getByRole("button", { name: /Find my Circles/i }));
-
-    expect(console.log).toHaveBeenCalledWith(
-      "[circle-match] MatchForm onSubmit fired",
-      expect.objectContaining({ submissionId: expect.any(String) }),
-    );
 
     await waitFor(() => {
       expect(saveMemberPreferences).toHaveBeenCalledTimes(1);

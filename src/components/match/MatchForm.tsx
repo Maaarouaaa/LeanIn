@@ -146,16 +146,12 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     const submissionId = createSubmissionId();
-    console.log("[circle-match] MatchForm onSubmit fired", { submissionId });
     event.preventDefault();
 
     const formEl = event.currentTarget;
 
     // Prevent double-submit while a request is in flight.
     if (submittingRef.current || isSubmitting) {
-      console.log("[circle-match] MatchForm submit ignored (already pending)", {
-        submissionId,
-      });
       return;
     }
 
@@ -163,13 +159,6 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
     const nativeValid = formEl.checkValidity();
     const valid =
       Object.keys(nextErrors).length === 0 && nativeValid;
-
-    console.log("[circle-match] MatchForm validation result", {
-      submissionId,
-      valid,
-      nativeValid,
-      errorKeys: Object.keys(nextErrors),
-    });
 
     if (!valid) {
       setErrors(nextErrors);
@@ -204,27 +193,15 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
       );
 
       if (!result.ok) {
-        console.error("[circle-match] MatchForm save failed", {
-          submissionId,
-          error: result.error,
-        });
         setErrors({ form: result.error });
         pushToast(result.error, "error");
         return;
       }
 
-      console.log("[circle-match] MatchForm navigation start", {
-        submissionId,
-        href: `/matches?sid=${submissionId}`,
-      });
       pushToast("Preferences saved. Finding your Circles…", "success");
       // Deterministic full navigation — do not leave this inside a React transition.
       window.location.assign(`/matches?sid=${encodeURIComponent(submissionId)}`);
     } catch (error) {
-      console.error("[circle-match] MatchForm submit exception", {
-        submissionId,
-        message: error instanceof Error ? error.message : "unknown",
-      });
       const message =
         error instanceof Error
           ? error.message
@@ -246,18 +223,9 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
       aria-busy={isSubmitting || undefined}
     >
       <section className="space-y-5" aria-labelledby="support-goals-title">
-        <div className="flex flex-col gap-3 border-b border-ink pb-4 sm:flex-row sm:items-end sm:justify-between">
-          <h2
-            id="support-goals-title"
-            className="font-display text-3xl text-ink sm:text-4xl"
-          >
-            01 What kind of support are you looking for?
-          </h2>
-          <p className="max-w-sm text-sm text-ink-muted sm:text-right">
-            We use these preferences to rank Circles that fit your goals—not
-            just the most popular ones.
-          </p>
-        </div>
+        <h2 id="support-goals-title" className="type-section text-ink">
+          01 What kind of support are you looking for?
+        </h2>
 
         <fieldset>
           <legend className="sr-only">Support goals</legend>
@@ -303,7 +271,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
       <section className="space-y-6" aria-labelledby="details-title">
         <h2
           id="details-title"
-          className="border-b border-ink pb-4 font-display text-3xl text-ink sm:text-4xl"
+          className="border-b border-ink pb-4 type-section text-ink"
         >
           02 Help us find a Circle that fits your life
         </h2>
@@ -410,7 +378,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
         </div>
 
         <fieldset className="space-y-3">
-          <legend className="text-sm font-bold uppercase tracking-[0.14em] text-ink">
+          <legend className="type-meta font-semibold text-ink">
             Preferred format <span className="text-error">*</span>
           </legend>
           <div className="flex flex-wrap gap-2">
@@ -464,18 +432,17 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
         </p>
       ) : null}
 
-      <div className="flex flex-col gap-4 border-t border-ink pt-6 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-ink-muted">* Required fields</p>
+      <div className="flex justify-center pt-6">
         <Button
           type="submit"
           size="lg"
           loading={isSubmitting}
-          loadingLabel="Matching…"
+          loadingLabel="Finding your Circles…"
           disabled={!clientReady || isSubmitting}
           aria-describedby={errors.form ? formErrorId : undefined}
-          className="sm:min-w-56"
+          className="w-full max-w-sm justify-center"
         >
-          Find my Circles →
+          Find my Circles
         </Button>
       </div>
     </form>

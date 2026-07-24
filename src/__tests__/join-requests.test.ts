@@ -44,7 +44,7 @@ describe("join request persistence", () => {
   });
 
   it("prevents duplicate active join requests", async () => {
-    const circle = SEED_CIRCLES[1];
+    const circle = SEED_CIRCLES[1]!;
     await memoryStore.createJoinRequest({
       profileId: DEMO_PROFILE_ID,
       circleId: circle.id,
@@ -61,6 +61,44 @@ describe("join request persistence", () => {
       DEMO_PROFILE_ID,
     );
     expect(stored).toHaveLength(1);
+  });
+
+  it("looks up join requests by both profile and Circle", async () => {
+    const a = SEED_CIRCLES[0]!;
+    const b = SEED_CIRCLES[1]!;
+    await memoryStore.createJoinRequest({
+      profileId: DEMO_PROFILE_ID,
+      circleId: a.id,
+      note: "For Circle A",
+    });
+
+    const forA = await memoryStore.getJoinRequest(DEMO_PROFILE_ID, a.id);
+    const forB = await memoryStore.getJoinRequest(DEMO_PROFILE_ID, b.id);
+
+    expect(forA?.circleId).toBe(a.id);
+    expect(forA?.note).toBe("For Circle A");
+    expect(forB).toBeNull();
+  });
+
+  it("blocks a second request even when the first is not pending", async () => {
+    const circle = SEED_CIRCLES[2]!;
+    const first = await memoryStore.createJoinRequest({
+      profileId: DEMO_PROFILE_ID,
+      circleId: circle.id,
+    });
+
+    const memory = globalThis.__circleMatchMemory;
+    expect(memory).toBeTruthy();
+    const row = memory!.joinRequests.find((item) => item.id === first.id);
+    expect(row).toBeTruthy();
+    row!.status = "declined";
+
+    await expect(
+      memoryStore.createJoinRequest({
+        profileId: DEMO_PROFILE_ID,
+        circleId: circle.id,
+      }),
+    ).rejects.toMatchObject({ code: "DUPLICATE_REQUEST" });
   });
 });
 

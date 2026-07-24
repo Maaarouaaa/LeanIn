@@ -1,9 +1,10 @@
 import { cn } from "@/lib/cn";
-import type {
-  InputHTMLAttributes,
-  ReactNode,
-  SelectHTMLAttributes,
-  TextareaHTMLAttributes,
+import {
+  forwardRef,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type SelectHTMLAttributes,
+  type TextareaHTMLAttributes,
 } from "react";
 
 interface FieldProps {
@@ -33,7 +34,7 @@ export function Field({
           {!optional ? <span className="text-error"> *</span> : null}
         </label>
         {optional ? (
-          <span className="font-editorial text-xs italic text-ink-muted">
+          <span className="type-meta italic text-ink-muted">
             Optional
           </span>
         ) : null}
@@ -69,13 +70,13 @@ export function TextInput({
   );
 }
 
-export function TextArea({
-  className,
-  error,
-  ...props
-}: TextareaHTMLAttributes<HTMLTextAreaElement> & { error?: boolean }) {
+export const TextArea = forwardRef<
+  HTMLTextAreaElement,
+  TextareaHTMLAttributes<HTMLTextAreaElement> & { error?: boolean }
+>(function TextArea({ className, error, ...props }, ref) {
   return (
     <textarea
+      ref={ref}
       className={cn(
         "min-h-32 w-full resize-y border border-ink bg-surface px-3.5 py-3 text-sm text-ink placeholder:text-ink-muted",
         error && "border-error bg-error-soft",
@@ -84,7 +85,7 @@ export function TextArea({
       {...props}
     />
   );
-}
+});
 
 export function SelectInput({
   className,

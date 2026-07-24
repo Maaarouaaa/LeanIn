@@ -1,12 +1,9 @@
 import { JoinRequestCTA } from "@/components/circles/JoinRequestCTA";
-import { ProgressTracker } from "@/components/ui/ProgressTracker";
-import {
-  LeaderProfile,
-  MatchBadge,
-  MemberAvatars,
-} from "@/components/ui/People";
+import { LeaderProfile, MemberAvatars } from "@/components/ui/People";
+import { EditorialImageFrame } from "@/components/ui/EditorialImageFrame";
 import { getCircleBySlugAction } from "@/lib/actions/circle-match";
 import { GOAL_LABELS } from "@/lib/constants";
+import { explainTopMatch } from "@/lib/matching";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -16,6 +13,18 @@ export const dynamic = "force-dynamic";
 
 interface CirclePageProps {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ from?: string | string[] }>;
+}
+
+function formatLabel(format: string): string {
+  if (format === "in-person") return "In person";
+  if (format === "virtual") return "Virtual";
+  if (format === "hybrid") return "Hybrid";
+  return format;
+}
+
+function leaderFirstName(name: string): string {
+  return name.trim().split(/\s+/)[0] || name;
 }
 
 export async function generateMetadata({
@@ -27,157 +36,196 @@ export async function generateMetadata({
   return { title: result.data.circle.name };
 }
 
-export default async function CircleDetailPage({ params }: CirclePageProps) {
+export default async function CircleDetailPage({
+  params,
+  searchParams,
+}: CirclePageProps) {
   const { slug } = await params;
+  const query = searchParams ? await searchParams : undefined;
+  const fromRaw = Array.isArray(query?.from) ? query?.from[0] : query?.from;
+  const fromCommunity = fromRaw === "community";
   const result = await getCircleBySlugAction(slug);
 
   if (!result.ok) {
     if (result.error === "Circle not found.") notFound();
     return (
       <div className="mx-auto max-w-3xl px-4 py-16 text-error" role="alert">
-        <h1 className="font-display text-4xl">Something went wrong</h1>
-        <p className="mt-2 text-sm">{result.error}</p>
+        <h1 className="type-section text-error">Something went wrong</h1>
+        <p className="mt-2 type-meta">{result.error}</p>
       </div>
     );
   }
 
   const { circle, request, match } = result.data;
+  const matchSentence = match ? explainTopMatch(match) : null;
+  const topicLabels = circle.topics.map(
+    (topic) => GOAL_LABELS[topic] ?? topic,
+  );
+  const locationCity = circle.location.split("·")[0]?.trim() ?? circle.location;
+  const leaderGivenName = leaderFirstName(circle.leader.name);
 
   return (
     <div className="page-enter">
-      <div className="border-b border-ink bg-paper px-4 py-4 sm:px-6 lg:px-10">
-        <div className="mx-auto flex max-w-[1440px] justify-end">
-          <ProgressTracker currentStep={3} />
-        </div>
-      </div>
-
-      <section className="relative overflow-hidden border-b border-ink">
+      <section className="relative overflow-hidden">
         <div className="mx-auto grid max-w-[1440px] lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="space-y-5 px-4 py-10 sm:px-6 lg:px-10 lg:py-14">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-ink-muted">
-              {circle.category} · {circle.location}
+          <div className="space-y-5 px-4 pb-10 pt-8 sm:px-6 lg:px-10 lg:pb-14 lg:pt-16">
+            <p className="type-eyebrow text-ink-muted">
+              {circle.category} · {locationCity}
             </p>
-            <h1 className="max-w-xl font-display text-5xl leading-[0.9] text-ink sm:text-6xl lg:text-7xl">
-              {circle.name}
-            </h1>
-            <p className="max-w-xl text-lg text-ink-soft">{circle.description}</p>
-            <JoinRequestCTA circle={circle} initialRequest={request} />
+
+            <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
+              <h1 className="type-page max-w-xl text-ink">{circle.name}</h1>
+              {match ? (
+                <span className="mb-1 inline-flex items-baseline gap-1.5 border border-ink bg-yellow px-2.5 py-1 font-product">
+                  <span className="text-2xl font-semibold leading-none text-ink">
+                    {match.score}%
+                  </span>
+                  <span className="type-meta font-medium text-ink">match</span>
+                </span>
+              ) : null}
+            </div>
+
+            {matchSentence ? (
+              <p className="measure font-editorial type-lead italic text-plum">
+                {matchSentence}
+              </p>
+            ) : (
+              <p className="measure font-editorial type-lead text-ink-soft">
+                {circle.description}
+              </p>
+            )}
           </div>
-          <div className="relative min-h-80 bg-yellow">
-            <div className="absolute inset-5 overflow-hidden organic-mask-wide sm:inset-8">
+
+          <div className="relative flex min-h-72 items-center bg-lavender/50 p-4 sm:p-6 lg:min-h-full lg:p-8">
+            <EditorialImageFrame variant="detail" className="w-full">
               <Image
                 src={circle.imageSrc}
                 alt={circle.imageAlt}
                 fill
-                className="object-cover"
+                className="z-0 object-cover object-[50%_38%]"
                 sizes="(max-width: 1024px) 100vw, 45vw"
                 priority
               />
-            </div>
-            {match ? (
-              <div className="absolute bottom-8 right-8 z-10 bg-ink/80 px-3 py-2 text-white backdrop-blur-sm">
-                <p className="font-display text-2xl leading-none">
-                  {match.score}%
-                </p>
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em]">
-                  Match
-                </p>
-              </div>
-            ) : null}
+            </EditorialImageFrame>
           </div>
         </div>
       </section>
 
-      <div className="mx-auto max-w-[1440px] space-y-0 px-4 sm:px-6 lg:px-10">
-        <section className="grid gap-8 border-b border-ink py-10 lg:grid-cols-2">
-          <div className="space-y-3">
-            <h2 className="font-display text-3xl text-ink">About this Circle</h2>
-            <p className="font-editorial text-lg leading-relaxed text-ink-soft">
-              {circle.description}
-            </p>
-          </div>
-          <div className="space-y-3">
-            <h2 className="font-display text-3xl text-ink">Who it’s for</h2>
-            <p className="text-ink-soft">{circle.whoItsFor}</p>
-          </div>
-        </section>
+      <div className="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-10 lg:py-14">
+        <div className="grid gap-12 lg:grid-cols-[7fr_5fr] lg:gap-16 xl:gap-20">
+          <article className="min-w-0">
+            <div className="measure space-y-5">
+              <p className="font-editorial type-lead text-ink-soft">
+                {circle.description}
+              </p>
+              <p className="font-editorial type-lead italic text-ink">
+                {circle.whoItsFor}
+              </p>
+            </div>
 
-        <section className="grid gap-6 border-b border-ink py-10 sm:grid-cols-3">
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-ink-muted">
-              Location & format
-            </h3>
-            <p className="mt-2 text-ink">
-              {circle.location} ·{" "}
-              {circle.format === "in-person" ? "In person" : circle.format}
-            </p>
-          </div>
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-ink-muted">
-              Schedule
-            </h3>
-            <p className="mt-2 text-ink">{circle.schedule}</p>
-          </div>
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-ink-muted">
-              Next meeting
-            </h3>
-            <p className="mt-2 text-ink">{circle.nextMeeting}</p>
-          </div>
-        </section>
+            <section className="mt-12 space-y-4" aria-labelledby="topics-heading">
+              <h2 id="topics-heading" className="type-section text-ink">
+                What we talk about
+              </h2>
+              <ul className="flex flex-wrap gap-2" aria-label="Circle topics">
+                {topicLabels.map((label) => (
+                  <li
+                    key={label}
+                    className="border border-ink/25 bg-paper-deep px-3 py-1.5 type-meta font-medium text-ink"
+                  >
+                    {label}
+                  </li>
+                ))}
+              </ul>
+            </section>
 
-        <section className="space-y-4 border-b border-ink py-10">
-          <h2 className="font-display text-3xl text-ink">Topics we discuss</h2>
-          <ul className="flex flex-wrap gap-2">
-            {circle.topics.map((topic, index) => (
-              <li
-                key={topic}
-                className={
-                  index === 0
-                    ? "inline-flex items-center gap-2 rounded-full border border-ink bg-yellow px-4 py-2 text-sm font-semibold"
-                    : "inline-flex items-center rounded-full border border-ink bg-surface px-4 py-2 text-sm font-semibold"
-                }
+            <section
+              className="mt-14 space-y-5"
+              aria-labelledby="people-heading"
+            >
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                <h2 id="people-heading" className="type-section text-ink">
+                  Meet the Circle
+                </h2>
+                <MemberAvatars
+                  members={circle.members}
+                  memberCount={circle.memberCount}
+                  circle={circle}
+                />
+              </div>
+            </section>
+
+            <section
+              className="mt-14 space-y-5"
+              aria-labelledby="leader-heading"
+            >
+              <h2 id="leader-heading" className="type-section text-ink">
+                Led by {leaderGivenName}
+              </h2>
+              <LeaderProfile leader={circle.leader} circle={circle} />
+            </section>
+
+            <div className="mt-10">
+              <Link
+                href={fromCommunity ? "/community" : "/matches"}
+                className="type-meta font-semibold text-ink underline-offset-4 hover:underline"
               >
-                {index === 0 ? (
-                  <span
-                    className="h-2.5 w-2.5 rounded-full bg-ink"
-                    aria-hidden="true"
-                  />
-                ) : null}
-                {GOAL_LABELS[topic]}
-              </li>
-            ))}
-          </ul>
-        </section>
+                {fromCommunity
+                  ? "← Back to community"
+                  : "← Back to your matches"}
+              </Link>
+            </div>
+          </article>
 
-        <section className="grid gap-10 border-b border-ink py-10 lg:grid-cols-2">
-          <div className="space-y-4">
-            <h2 className="font-display text-3xl text-ink">
-              The people in this Circle
-            </h2>
-            <MemberAvatars
-              members={circle.members}
-              memberCount={circle.memberCount}
-            />
-            <p className="text-sm text-ink-muted">
-              {circle.memberCount} members — Product, finance, public service,
-              and social impact.
-            </p>
-          </div>
-          <div className="space-y-4">
-            <h2 className="font-display text-3xl text-ink">Circle leader</h2>
-            <LeaderProfile leader={circle.leader} />
-          </div>
-        </section>
+          <aside className="lg:pt-1">
+            <div className="space-y-7 border border-ink bg-surface px-5 py-6 sm:px-6 lg:sticky lg:top-6">
+              <dl className="space-y-5">
+                <div>
+                  <dt className="type-meta font-semibold text-ink">
+                    Location and format
+                  </dt>
+                  <dd className="mt-1 type-body text-ink-soft">
+                    {circle.location}
+                    <span className="text-ink-muted">
+                      {" "}
+                      · {formatLabel(circle.format)}
+                    </span>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="type-meta font-semibold text-ink">Schedule</dt>
+                  <dd className="mt-1 type-body text-ink-soft">
+                    {circle.schedule}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="type-meta font-semibold text-ink">
+                    Next meeting
+                  </dt>
+                  <dd className="mt-1 type-body font-medium text-ink">
+                    {circle.nextMeeting}
+                  </dd>
+                </div>
+              </dl>
 
-        <div className="flex flex-wrap items-center justify-between gap-4 py-8">
-          <Link
-            href="/matches"
-            className="text-sm font-bold uppercase tracking-[0.12em] text-ink underline-offset-4 hover:underline"
-          >
-            ← Back to matches
-          </Link>
-          {match ? <MatchBadge score={match.score} /> : null}
+              {matchSentence ? (
+                <div className="border-t border-ink/15 pt-6">
+                  <p className="type-meta font-semibold text-ink">
+                    Why this match
+                  </p>
+                  <p className="mt-2 type-body text-ink-soft">{matchSentence}</p>
+                </div>
+              ) : null}
+
+              <div className="border-t border-ink/15 pt-6">
+                <JoinRequestCTA
+                  circle={circle}
+                  initialRequest={request}
+                  fullWidth
+                />
+              </div>
+            </div>
+          </aside>
         </div>
       </div>
     </div>

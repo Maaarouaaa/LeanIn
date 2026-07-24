@@ -2,12 +2,15 @@
 
 import { requireAuthenticatedMember } from "@/lib/auth";
 import { MAX_GOALS, MAX_NOTE_LENGTH } from "@/lib/constants";
+import { enrichCirclePresentation } from "@/lib/enrich-circle";
+import { sortCommunityCircles } from "@/lib/circle-filters";
 import { rankCircleMatches } from "@/lib/matching";
 import { getDataStore } from "@/lib/data/store";
 import {
   inputFromPreferences,
   preferencesFromInput,
 } from "@/lib/data/types";
+import { debugLog } from "@/lib/debug";
 import { logSupabaseError } from "@/lib/supabase/server";
 import {
   SUPABASE_QUERY_TIMEOUT_MS,
@@ -27,15 +30,23 @@ function logActionError(context: string, error: unknown) {
 }
 
 function logStage(stage: string, phase: "start" | "end", extra?: Record<string, unknown>) {
-  console.info(`[circle-match] stage:${stage} ${phase}`, extra ?? {});
+  debugLog(`[circle-match] stage:${stage} ${phase}`, extra);
 }
 
 function toUserFacingError(error: unknown, fallback: string): string {
   if (error instanceof TimeoutError) return error.message;
-  if (error instanceof Error && error.message) return error.message;
-  if (error && typeof error === "object" && "message" in error) {
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === "string" && message.trim()) return message;
+  // After vitest module resets, instanceof can fail across copies of TimeoutError.
+  if (
+    error instanceof Error &&
+    (error.name === "TimeoutError" || /timed out/i.test(error.message))
+  ) {
+    return error.message;
+  }
+  if (error && typeof error === "object" && "code" in error) {
+    const code = String((error as { code: string }).code);
+    if (code === "DUPLICATE_REQUEST") {
+      return "You already have a request for this Circle.";
+    }
   }
   return fallback;
 }
@@ -306,7 +317,7 @@ async function computeRankedMatches(
   }
 
   const matches = displayRanked.slice(0, 3);
-  console.info("[circle-match] stage:getRankedMatches.results", {
+  debugLog("[circle-match] stage:getRankedMatches.results", {
     submissionId: submissionId ?? null,
     scoredCount: ranked.length,
     afterFilters: displayRanked.length,
@@ -340,7 +351,7 @@ export async function createJoinRequestAction(input: {
     const memberId = await requireAuthenticatedMember();
     const store = await getDataStore();
     const existing = await store.getJoinRequest(memberId, input.circleId);
-    if (existing && existing.status === "pending") {
+    if (existing) {
       return {
         ok: false,
         error: "You already have a request for this Circle.",
@@ -393,10 +404,12 @@ export async function getCircleBySlugAction(slug: string) {
   try {
     const memberId = await requireAuthenticatedMember();
     const store = await getDataStore();
-    const circle = await store.getCircleBySlug(slug);
-    if (!circle) {
+    const stored = await store.getCircleBySlug(slug);
+    if (!stored) {
       return { ok: false as const, error: "Circle not found." };
     }
+
+    const circle = enrichCirclePresentation(stored);
 
     const request = await store.getJoinRequest(memberId, circle.id);
     const profile = await store.getDemoProfile();
@@ -417,6 +430,51 @@ export async function getCircleBySlugAction(slug: string) {
     return {
       ok: false as const,
       error: toUserFacingError(error, "Unable to load this Circle."),
+    };
+  }
+}
+
+/**
+ * Full public Circle catalog for Community browse — never limited to top matches.
+ */
+export async function getCommunityCircles() {
+  try {
+    const store = await getDataStore();
+    const profile = await store.getDemoProfile();
+    const stored = await withTimeout(
+      store.listCircles(),
+      SUPABASE_QUERY_TIMEOUT_MS,
+      "Loading Circles timed out. Please try again.",
+    );
+    const circles = sortCommunityCircles(
+      stored.map((circle) => enrichCirclePresentation(circle)),
+    );
+
+    let scoresById: Record<string, number> = {};
+    if (profile.preferences) {
+      const input = inputFromPreferences(profile.preferences);
+      if (input) {
+        const ranked = rankCircleMatches(input, circles);
+        scoresById = Object.fromEntries(
+          ranked.map((match) => [match.circle.id, match.score]),
+        );
+      }
+    }
+
+    return {
+      ok: true as const,
+      data: {
+        circles,
+        scoresById,
+        preferences: profile.preferences,
+        mode: store.mode,
+      },
+    };
+  } catch (error) {
+    logActionError("getCommunityCircles failed", error);
+    return {
+      ok: false as const,
+      error: toUserFacingError(error, "Unable to load the Circle community."),
     };
   }
 }

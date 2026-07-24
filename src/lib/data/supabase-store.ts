@@ -1,5 +1,6 @@
 import { DEMO_PROFILE_ID } from "@/lib/constants";
 import type { DataStore } from "@/lib/data/types";
+import { debugLog } from "@/lib/debug";
 import { getSupabaseAdmin, logSupabaseError } from "@/lib/supabase/server";
 import {
   SUPABASE_QUERY_TIMEOUT_MS,
@@ -34,7 +35,7 @@ async function runSupabaseQuery<T>(
   run: () => PromiseLike<{ data: T; error: unknown }>,
 ): Promise<T> {
   const started = Date.now();
-  console.info(`[circle-match] stage:${stage} start`);
+  debugLog(`[circle-match] stage:${stage} start`);
   try {
     const { data, error } = await withTimeout(
       Promise.resolve(run()),
@@ -42,13 +43,13 @@ async function runSupabaseQuery<T>(
       "Supabase query timed out after 10 seconds.",
     );
     if (error) throwQueryError(`${stage} failed`, error);
-    console.info(`[circle-match] stage:${stage} end`, {
+    debugLog(`[circle-match] stage:${stage} end`, {
       ok: true,
       ms: Date.now() - started,
     });
     return data;
   } catch (error) {
-    console.info(`[circle-match] stage:${stage} end`, {
+    debugLog(`[circle-match] stage:${stage} end`, {
       ok: false,
       ms: Date.now() - started,
       reason: error instanceof TimeoutError ? "timeout" : "exception",
@@ -201,7 +202,7 @@ export const supabaseStore: DataStore = {
         .order("name", { ascending: true }),
     );
     const rows = Array.isArray(data) ? (data as CircleRow[]) : [];
-    console.info("[circle-match] stage:supabase.circles.listCircles mapped", {
+    debugLog("[circle-match] stage:supabase.circles.listCircles mapped", {
       rowCount: rows.length,
     });
     return rows.map(mapCircle);

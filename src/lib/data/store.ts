@@ -1,6 +1,7 @@
 import { memoryStore } from "@/lib/data/memory";
 import { supabaseStore } from "@/lib/data/supabase-store";
 import type { DataStore } from "@/lib/data/types";
+import { debugLog } from "@/lib/debug";
 import {
   getSupabaseEnvPresence,
   hasRequiredSupabaseEnv,
@@ -39,16 +40,16 @@ export async function getDataStore(): Promise<DataStore> {
 
 async function selectDataStore(): Promise<DataStore> {
   const started = Date.now();
-  console.info("[circle-match] stage:getDataStore start");
+  debugLog("[circle-match] stage:getDataStore start");
   const envPresent = getSupabaseEnvPresence();
-  console.info("[circle-match] Supabase env present:", envPresent);
+  debugLog("[circle-match] Supabase env present", envPresent);
 
   if (!hasRequiredSupabaseEnv()) {
-    console.info(
+    debugLog(
       "[circle-match] repository adapter selected: memory (missing NEXT_PUBLIC_SUPABASE_URL and/or NEXT_PUBLIC_SUPABASE_ANON_KEY)",
     );
     cachedStore = memoryStore;
-    console.info("[circle-match] stage:getDataStore end", {
+    debugLog("[circle-match] stage:getDataStore end", {
       mode: cachedStore.mode,
       ms: Date.now() - started,
     });
@@ -58,7 +59,7 @@ async function selectDataStore(): Promise<DataStore> {
   try {
     resetSupabaseClient();
     const supabase = createSupabaseClient();
-    console.info("[circle-match] stage:supabase.circles.probe start");
+    debugLog("[circle-match] stage:supabase.circles.probe start");
     const { data, error } = await withTimeout(
       Promise.resolve(
         supabase.from("circles").select("id, slug").limit(1),
@@ -69,25 +70,25 @@ async function selectDataStore(): Promise<DataStore> {
 
     if (error) {
       logSupabaseError("Supabase circles probe failed", error);
-      console.info(
+      debugLog(
         "[circle-match] repository adapter selected: memory (probe query failed)",
       );
       cachedStore = memoryStore;
-      console.info("[circle-match] stage:getDataStore end", {
+      debugLog("[circle-match] stage:getDataStore end", {
         mode: cachedStore.mode,
         ms: Date.now() - started,
       });
       return cachedStore;
     }
 
-    console.info("[circle-match] stage:supabase.circles.probe end", {
+    debugLog("[circle-match] stage:supabase.circles.probe end", {
       ok: true,
       rowCount: data?.length ?? 0,
       sampleSlug: data?.[0]?.slug ?? null,
     });
-    console.info("[circle-match] repository adapter selected: supabase");
+    debugLog("[circle-match] repository adapter selected: supabase");
     cachedStore = supabaseStore;
-    console.info("[circle-match] stage:getDataStore end", {
+    debugLog("[circle-match] stage:getDataStore end", {
       mode: cachedStore.mode,
       ms: Date.now() - started,
     });
@@ -95,7 +96,7 @@ async function selectDataStore(): Promise<DataStore> {
   } catch (error) {
     if (error instanceof TimeoutError) {
       logSupabaseError("Supabase circles probe timed out", error);
-      console.info(
+      debugLog(
         "[circle-match] repository adapter selected: memory (probe timed out)",
       );
     } else {
@@ -103,12 +104,12 @@ async function selectDataStore(): Promise<DataStore> {
         "[circle-match] Supabase initialization error:",
         formatSupabaseError(error),
       );
-      console.info(
+      debugLog(
         "[circle-match] repository adapter selected: memory (initialization threw)",
       );
     }
     cachedStore = memoryStore;
-    console.info("[circle-match] stage:getDataStore end", {
+    debugLog("[circle-match] stage:getDataStore end", {
       mode: cachedStore.mode,
       ms: Date.now() - started,
     });

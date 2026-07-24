@@ -44,7 +44,7 @@ export function Button({
       {...props}
       type={type}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-full font-semibold tracking-wide transition-colors motion-safe-transition disabled:cursor-not-allowed",
+        "inline-flex items-center justify-center gap-2 text-center rounded-full font-semibold transition-colors motion-safe-transition disabled:cursor-not-allowed",
         variantClasses[variant],
         sizeClasses[size],
         className,
@@ -54,11 +54,13 @@ export function Button({
     >
       {loading ? (
         <span
-          className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent"
+          className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-current border-r-transparent"
           aria-hidden="true"
         />
       ) : null}
-      <span>{loading ? loadingLabel : children}</span>
+      <span className="text-center leading-none">
+        {loading ? loadingLabel : children}
+      </span>
     </button>
   );
 }

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
-import { Bebas_Neue, Libre_Baskerville, IBM_Plex_Sans } from "next/font/google";
+import { Barlow_Condensed, Newsreader, IBM_Plex_Sans } from "next/font/google";
 import { connection } from "next/server";
 import { Masthead } from "@/components/layout/Masthead";
+import { MatchFlowShell } from "@/components/layout/MatchFlowShell";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 import { ToastProvider } from "@/components/ui/Toast";
 import { getDataMode } from "@/lib/data/store";
 import "./globals.css";
@@ -13,16 +15,16 @@ const productSans = IBM_Plex_Sans({
   display: "swap",
 });
 
-const display = Bebas_Neue({
+const display = Barlow_Condensed({
   subsets: ["latin"],
-  weight: "400",
+  weight: ["500", "600", "700"],
   variable: "--font-display",
   display: "swap",
 });
 
-const editorial = Libre_Baskerville({
+const editorial = Newsreader({
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
   variable: "--font-editorial",
   display: "swap",
@@ -64,14 +66,9 @@ export default async function RootLayout({
             </a>
             <Masthead dataMode={dataMode} />
             <main id="main-content" className="flex-1">
-              {children}
+              <MatchFlowShell>{children}</MatchFlowShell>
             </main>
-            <footer className="border-t border-ink">
-              <div className="mx-auto flex max-w-[1440px] flex-col gap-2 px-4 py-6 text-sm text-ink-muted sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-10">
-                <p>Circle Match helps new members find a Circle that fits.</p>
-                <p>Demo profile · Amina Okonkwo</p>
-              </div>
-            </footer>
+            <SiteFooter />
           </div>
         </ToastProvider>
       </body>

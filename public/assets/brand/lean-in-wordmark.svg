@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 64" fill="none" role="img" aria-labelledby="leanInTitle">
+  <title id="leanInTitle">Lean In</title>
+  <!-- Black LEAN IN wordmark with coral underline under IN (transparent background) -->
+  <g fill="#171717">
+    <!-- L -->
+    <path d="M4 6h20v38H46v12H4V6z"/>
+    <!-- E -->
+    <path d="M58 6h50v12H76v8h28v12H76v8h32v12H58V6z"/>
+    <!-- A -->
+    <path d="M128 56l20-50h22l20 50h-19l-4-11h-16l-4 11h-19zm25-22h11l-5.5-16L153 34z"/>
+    <!-- N -->
+    <path d="M200 6h18l26 32V6h18v50h-18l-26-32v32h-18V6z"/>
+    <!-- I -->
+    <path d="M278 6h18v50h-18V6z"/>
+    <!-- N -->
+    <path d="M306 6h18l26 32V6h18v50h-18l-26-32v32h-18V6z"/>
+  </g>
+  <rect x="278" y="58" width="78" height="4.5" rx="1" fill="#E85D4C"/>
+</svg>
