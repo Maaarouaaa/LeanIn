@@ -25,9 +25,21 @@ import type {
   MemberPreferences,
 } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState, useSyncExternalStore } from "react";
 
 const CLIENT_SAVE_TIMEOUT_MS = 10_000;
+
+function subscribeNoop() {
+  return () => {};
+}
+
+function getClientSnapshot() {
+  return true;
+}
+
+function getServerSnapshot() {
+  return false;
+}
 
 interface MatchFormProps {
   initialPreferences?: MemberPreferences | null;
@@ -88,11 +100,11 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
   // Single source of truth for loading — do not mix with useTransition/useActionState.
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Avoid native pre-hydration submits (full page reload / loading skeleton, no server action).
-  const [clientReady, setClientReady] = useState(false);
-
-  useEffect(() => {
-    setClientReady(true);
-  }, []);
+  const clientReady = useSyncExternalStore(
+    subscribeNoop,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
 
   function toggleGoal(value: Goal) {
     if (isSubmitting) return;
