@@ -51,7 +51,7 @@ export function JoinRequestCTA({
             className={fullWidth ? "w-full" : "w-full sm:w-auto"}
             onClick={() => setOpen(true)}
           >
-            Request to join →
+            Request to join
           </Button>
         )}
       </div>

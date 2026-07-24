@@ -92,23 +92,27 @@ export function EditorialHero({
           </div>
         </div>
 
-        <div className="relative min-h-72 bg-paper-deep lg:min-h-full">
+        <div className="relative flex min-h-72 items-center bg-paper-deep p-4 sm:p-6 lg:min-h-full lg:p-8">
           {imageSrc ? (
-            <EditorialImageFrame
-              variant="hero"
-              focalPoint="50% 35%"
-              className="absolute inset-3 sm:inset-5"
-            >
+            <EditorialImageFrame variant="hero" className="w-full">
               <Image
                 src={imageSrc}
                 alt={imageAlt ?? ""}
                 fill
-                className="object-cover"
+                className="z-0 object-cover object-[50%_35%]"
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 priority
               />
             </EditorialImageFrame>
-          ) : null}
+          ) : (
+            <div
+              className="flex min-h-48 w-full items-center justify-center type-meta text-ink-muted"
+              role="img"
+              aria-label={imageAlt || "Circle photography unavailable"}
+            >
+              Image unavailable
+            </div>
+          )}
           {badge ? (
             <span className="absolute bottom-6 right-6 z-10 bg-ink px-3 py-1.5 type-meta font-medium text-white">
               {badge}

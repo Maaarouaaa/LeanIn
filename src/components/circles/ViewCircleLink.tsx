@@ -1,4 +1,4 @@
-import { DoorIcon } from "@/components/ui/DoorIcon";
+import { ArrowRightIcon } from "@/components/ui/ArrowRightIcon";
 import { cn } from "@/lib/cn";
 import Link from "next/link";
 
@@ -6,12 +6,12 @@ interface ViewCircleLinkProps {
   slug: string;
   name: string;
   className?: string;
-  /** Tone for dark featured cards vs light secondary cards. */
+  /** Visual tone for dark featured cards vs light secondary cards. */
   tone?: "light" | "dark" | "yellow";
 }
 
 /**
- * Shared Circle card action: door is the primary affordance; “View” clarifies.
+ * Shared Circle-card action: arrow-only control in the lower-right.
  * Accessible name is always “View [Circle name]”.
  */
 export function ViewCircleLink({
@@ -25,32 +25,17 @@ export function ViewCircleLink({
       href={`/circles/${slug}`}
       aria-label={`View ${name}`}
       className={cn(
-        "group inline-flex min-h-11 items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4",
-        tone === "dark" && "focus-visible:outline-white",
-        (tone === "light" || tone === "yellow") && "focus-visible:outline-ink",
+        "view-circle-arrow absolute bottom-5 right-5 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full border transition-colors motion-safe-transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4",
+        tone === "dark" &&
+          "border-white/80 bg-ink/40 text-white hover:bg-white hover:text-ink focus-visible:outline-white",
+        tone === "light" &&
+          "border-ink bg-surface text-ink hover:bg-ink hover:text-white focus-visible:outline-ink",
+        tone === "yellow" &&
+          "border-ink bg-yellow text-ink hover:bg-ink hover:text-yellow focus-visible:outline-ink",
         className,
       )}
     >
-      <span
-        aria-hidden="true"
-        className={cn(
-          "text-[12px] font-medium",
-          tone === "dark" ? "text-white/70" : "text-ink/70",
-        )}
-      >
-        View
-      </span>
-      <span
-        className={cn(
-          "inline-flex h-11 w-11 items-center justify-center",
-          tone === "yellow" &&
-            "rounded-full border border-ink bg-yellow text-ink",
-          tone === "dark" && "text-white",
-          tone === "light" && "text-ink",
-        )}
-      >
-        <DoorIcon className="h-8 w-8" />
-      </span>
+      <ArrowRightIcon className="view-circle-arrow-icon h-5 w-5" />
     </Link>
   );
 }

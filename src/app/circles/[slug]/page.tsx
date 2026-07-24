@@ -89,17 +89,13 @@ export default async function CircleDetailPage({ params }: CirclePageProps) {
             )}
           </div>
 
-          <div className="relative min-h-72 bg-lavender/50 lg:min-h-full">
-            <EditorialImageFrame
-              variant="detail"
-              focalPoint="50% 38%"
-              className="absolute inset-4 sm:inset-6 lg:inset-8"
-            >
+          <div className="relative flex min-h-72 items-center bg-lavender/50 p-4 sm:p-6 lg:min-h-full lg:p-8">
+            <EditorialImageFrame variant="detail" className="w-full">
               <Image
                 src={circle.imageSrc}
                 alt={circle.imageAlt}
                 fill
-                className="object-cover"
+                className="z-0 object-cover object-[50%_38%]"
                 sizes="(max-width: 1024px) 100vw, 45vw"
                 priority
               />

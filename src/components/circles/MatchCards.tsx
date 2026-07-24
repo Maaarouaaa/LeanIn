@@ -10,9 +10,9 @@ export function FeaturedMatchCard({ match }: { match: CircleMatch }) {
   const why = explainTopMatch(match);
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-ink bg-ink text-white">
+    <article className="relative overflow-hidden rounded-2xl border border-ink bg-ink text-white">
       <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="flex flex-col space-y-5 p-6 sm:p-8">
+        <div className="relative flex flex-col space-y-5 p-6 pb-20 sm:p-8 sm:pb-20">
           <p className="type-eyebrow text-yellow">Top match</p>
           <h2 className="font-editorial text-[clamp(1.75rem,3vw,2.5rem)] font-semibold leading-tight">
             {circle.name}
@@ -39,13 +39,11 @@ export function FeaturedMatchCard({ match }: { match: CircleMatch }) {
             <p className="type-meta font-semibold">Why this matches</p>
             <p className="mt-1 type-meta font-medium">{why}</p>
           </div>
-          <div className="pt-1">
-            <ViewCircleLink
-              slug={circle.slug}
-              name={circle.name}
-              tone="yellow"
-            />
-          </div>
+          <ViewCircleLink
+            slug={circle.slug}
+            name={circle.name}
+            tone="yellow"
+          />
         </div>
 
         <div className="relative order-first p-4 sm:p-6 lg:order-none lg:p-6">
@@ -55,17 +53,13 @@ export function FeaturedMatchCard({ match }: { match: CircleMatch }) {
               <p className="mt-1 type-meta font-medium">Match</p>
             </div>
           </div>
-          <EditorialImageFrame
-            variant="featured"
-            focalPoint="52% 42%"
-            className="aspect-[16/9] min-w-0 bg-paper-deep"
-          >
+          <EditorialImageFrame variant="feature">
             <Image
               src={circle.imageSrc}
               alt={circle.imageAlt}
               fill
               sizes="(min-width: 1024px) 48vw, 100vw"
-              className="object-cover"
+              className="z-0 object-cover object-[52%_42%]"
             />
           </EditorialImageFrame>
         </div>
@@ -85,26 +79,22 @@ export function SecondaryMatchCard({
   const why = explainTopMatch(match);
 
   return (
-    <article className="grid overflow-hidden border border-ink bg-surface sm:grid-cols-[0.9fr_1.1fr]">
-      <div className="relative min-h-48 p-3 sm:p-4">
+    <article className="relative grid overflow-hidden border border-ink bg-surface sm:grid-cols-[0.9fr_1.1fr]">
+      <div className="relative p-3 sm:p-4">
         <div className="absolute left-5 top-5 z-10 sm:left-6 sm:top-6">
           <MatchBadge score={score} tone={tone} />
         </div>
-        <EditorialImageFrame
-          variant="card"
-          focalPoint="50% 40%"
-          className="absolute inset-3 sm:inset-4"
-        >
+        <EditorialImageFrame variant="card">
           <Image
             src={circle.imageSrc}
             alt={circle.imageAlt}
             fill
-            className="object-cover"
+            className="z-0 object-cover object-[50%_40%]"
             sizes="(max-width: 640px) 100vw, 30vw"
           />
         </EditorialImageFrame>
       </div>
-      <div className="space-y-3 p-5">
+      <div className="relative space-y-3 p-5 pb-20">
         <p className="type-eyebrow text-ink-muted">{circle.category}</p>
         <h3 className="font-editorial text-2xl font-semibold leading-snug text-ink">
           {circle.name}

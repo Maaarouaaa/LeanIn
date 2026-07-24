@@ -173,37 +173,23 @@ body {
   border-radius: 28% 72% 55% 45% / 60% 35% 65% 40%;
 }
 
-/* Shared editorial photography cutout (not for avatars / identity portraits) */
-.editorial-image-frame {
-  overflow: hidden;
-  border-radius: var(--editorial-radius, 34% 10% 28% 14% / 16% 30% 12% 38%);
-  isolation: isolate;
-}
-
-.editorial-image-frame > img,
-.editorial-image-frame img {
-  object-position: var(--editorial-focal, 50% 35%);
-}
-
-/* Animated door for shared “View” Circle actions */
-.door-icon .door-panel {
-  transform-box: fill-box;
-  transform-origin: left center;
+/* Circle-card arrow nudge on hover/focus */
+.view-circle-arrow-icon {
   transition: transform 200ms ease-out;
 }
 
-.group:hover .door-icon .door-panel,
-.group:focus-visible .door-icon .door-panel {
-  transform: perspective(40px) rotateY(-55deg);
+.view-circle-arrow:hover .view-circle-arrow-icon,
+.view-circle-arrow:focus-visible .view-circle-arrow-icon {
+  transform: translateX(2px);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .door-icon .door-panel {
+  .view-circle-arrow-icon {
     transition: none !important;
   }
 
-  .group:hover .door-icon .door-panel,
-  .group:focus-visible .door-icon .door-panel {
+  .view-circle-arrow:hover .view-circle-arrow-icon,
+  .view-circle-arrow:focus-visible .view-circle-arrow-icon {
     transform: none !important;
   }
 }

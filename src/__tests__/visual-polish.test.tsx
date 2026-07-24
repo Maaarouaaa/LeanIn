@@ -27,27 +27,28 @@ describe("flowStepFromPathname", () => {
 describe("ViewCircleLink", () => {
   afterEach(() => cleanup());
 
-  it("renders View as secondary copy with a dominant door icon", () => {
+  it("renders an arrow-only action with an accessible View label", () => {
     render(
-      <ViewCircleLink slug="bay-area-leadership-lab" name="Leadership Lab" />,
+      <div className="relative">
+        <ViewCircleLink slug="bay-area-leadership-lab" name="Leadership Lab" />
+      </div>,
     );
     const link = screen.getByRole("link", { name: "View Leadership Lab" });
     expect(link).toHaveAttribute("href", "/circles/bay-area-leadership-lab");
-    expect(link.textContent).not.toMatch(/Circle →|→/);
-    const door = link.querySelector("svg.door-icon");
-    expect(door).not.toBeNull();
-    expect(door?.getAttribute("class") ?? "").toMatch(/h-8/);
-    const label = link.querySelector("span");
-    expect(label?.getAttribute("class") ?? "").toMatch(/text-\[12px\]/);
+    expect(link.textContent?.trim()).toBe("");
+    expect(link.textContent).not.toMatch(/View Circle|Door|→/);
+    expect(link.querySelector("svg")).not.toBeNull();
+    expect(link.className).toMatch(/bottom-5/);
+    expect(link.className).toMatch(/h-11/);
   });
 });
 
 describe("EditorialImageFrame", () => {
   afterEach(() => cleanup());
 
-  it("applies an editorial cutout without affecting identity portraits", () => {
+  it("provides a relative aspect-ratio box with inline border-radius", () => {
     const { container } = render(
-      <EditorialImageFrame variant="hero" focalPoint="50% 35%">
+      <EditorialImageFrame variant="hero">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img alt="Hero" src="/assets/heroes/hero-match.jpg" />
       </EditorialImageFrame>,
@@ -56,8 +57,9 @@ describe("EditorialImageFrame", () => {
       "[data-editorial-image='hero']",
     ) as HTMLElement | null;
     expect(frame).not.toBeNull();
-    expect(frame?.style.getPropertyValue("--editorial-radius")).toContain("%");
-    expect(frame?.className).toMatch(/editorial-image-frame/);
+    expect(frame?.className).toMatch(/relative/);
+    expect(frame?.style.aspectRatio).toMatch(/16/);
+    expect(frame?.style.borderRadius).toContain("%");
   });
 });
 
