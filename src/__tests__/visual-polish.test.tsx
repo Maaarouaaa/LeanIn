@@ -47,7 +47,7 @@ describe("ViewCircleLink", () => {
 describe("EditorialHero split", () => {
   afterEach(() => cleanup());
 
-  it("uses a rectangular photo with a rounded yellow overlap instead of a blob", () => {
+  it("uses a normal two-column split without decorative yellow overlays", () => {
     const { container } = render(
       <EditorialHero
         tone="split"
@@ -62,27 +62,12 @@ describe("EditorialHero split", () => {
       '[data-editorial-hero="split"]',
     ) as HTMLElement | null;
     expect(hero).not.toBeNull();
-
-    const photo = container.querySelector(
-      "[data-hero-photo]",
-    ) as HTMLElement | null;
-    expect(photo).not.toBeNull();
-    expect(photo?.className).toMatch(/rounded-tr-2xl/);
-    expect(photo?.style.borderRadius || "").not.toMatch(/%/);
+    expect(
+      container.querySelector("[data-hero-yellow-overlap]"),
+    ).toBeNull();
     expect(
       container.querySelector("[data-editorial-image='hero']"),
-    ).toBeNull();
-
-    const overlap = container.querySelector(
-      "[data-hero-yellow-overlap]",
-    ) as SVGElement | null;
-    expect(overlap).not.toBeNull();
-    expect(overlap?.getAttribute("aria-hidden")).toBe("true");
-    expect(overlap?.getAttribute("class") || "").toMatch(/pointer-events-none/);
-    expect(overlap?.querySelector("path")).not.toBeNull();
-    expect(overlap?.querySelector("path")?.getAttribute("d") || "").toMatch(
-      /C\d/,
-    );
+    ).not.toBeNull();
     expect(screen.getByText("About 3 minutes")).toBeInTheDocument();
   });
 });
