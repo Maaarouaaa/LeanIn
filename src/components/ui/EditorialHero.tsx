@@ -17,11 +17,11 @@ interface EditorialHeroProps {
 }
 
 /**
- * Soft sine-wave yellow edge overlapping the photograph.
- * Even rounded crests/troughs (~70–110px into the image column).
+ * Flower-petal yellow edge overlapping the photograph — soft scalloped
+ * petal tips (~70–110px into the image), like the outline of petals.
  */
 const HERO_YELLOW_PATH =
-  "M0 0 H78 C95 8 95 17 78 25 C61 33 61 42 78 50 C95 58 95 67 78 75 C61 83 61 92 78 100 H0 Z";
+  "M0 0 H75 C88 0 100 6 100 12.5 C100 19 88 25 75 25 C88 25 100 31 100 37.5 C100 44 88 50 75 50 C88 50 100 56 100 62.5 C100 69 88 75 75 75 C88 75 100 81 100 87.5 C100 94 88 100 75 100 H0 Z";
 
 export function EditorialHero({
   eyebrow,
@@ -135,7 +135,7 @@ export function EditorialHero({
           ) : null}
         </div>
 
-        {/* Decorative yellow shape — soft wave crests over the photo */}
+        {/* Decorative yellow shape — flower-petal scallops over the photo */}
         <svg
           aria-hidden="true"
           data-hero-yellow-overlap=""
