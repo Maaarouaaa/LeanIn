@@ -17,11 +17,11 @@ interface EditorialHeroProps {
 }
 
 /**
- * Soft rounded yellow edge overlapping the photograph.
- * viewBox path: two bold curved scoops (~70–110px into the image column).
+ * Organic wavy yellow edge overlapping the photograph — soft lobes like
+ * the editorial reference (not sharp notches). Bulges reach ~70–110px in.
  */
 const HERO_YELLOW_PATH =
-  "M0 0 H74 C86 6 96 16 90 30 C84 44 98 52 92 66 C86 80 80 90 74 100 H0 Z";
+  "M0 0 H72 C84 1 96 6 98 14 C100 22 88 26 84 32 C80 38 96 42 100 50 C102 58 88 62 84 68 C80 74 96 80 98 88 C99 94 88 98 72 100 H0 Z";
 
 export function EditorialHero({
   eyebrow,
@@ -135,15 +135,15 @@ export function EditorialHero({
           ) : null}
         </div>
 
-        {/* Decorative yellow shape — soft rounded scoops over the photo */}
+        {/* Decorative yellow shape — organic rounded lobes over the photo */}
         <svg
           aria-hidden="true"
           data-hero-yellow-overlap=""
-          className="pointer-events-none absolute inset-y-0 left-0 z-[15] hidden h-full w-[calc(50%+5.5rem)] text-yellow md:block lg:w-[calc(50%+6.5rem)]"
+          className="pointer-events-none absolute inset-y-0 left-0 z-[15] hidden h-full w-[calc(50%+5.5rem)] md:block lg:w-[calc(50%+6.5rem)]"
           viewBox="0 0 100 100"
           preserveAspectRatio="none"
         >
-          <path fill="currentColor" d={HERO_YELLOW_PATH} />
+          <path fill="var(--yellow)" d={HERO_YELLOW_PATH} />
         </svg>
       </div>
       {children}
