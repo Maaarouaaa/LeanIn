@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   rankCircleMatches,
   scoreCircleMatch,
+  topRankedMatches,
   validateMatchForm,
 } from "@/lib/matching";
 import { SEED_CIRCLES } from "@/lib/data/seed";
-import type { MatchFormInput } from "@/lib/types";
+import type { Circle, MatchFormInput } from "@/lib/types";
 
 const bayAreaPrefs: MatchFormInput = {
   goals: ["growing-as-a-leader", "building-confidence", "finding-mentorship"],
@@ -81,6 +82,17 @@ describe("scoreCircleMatch", () => {
     ).score;
     expect(eveningScore).toBeGreaterThan(morningScore - 5);
   });
+
+  it("still scores format-mismatched Circles instead of excluding them", () => {
+    const virtual = SEED_CIRCLES.find(
+      (circle) => circle.slug === "women-building-in-tech",
+    )!;
+    const match = scoreCircleMatch(
+      { ...bayAreaPrefs, format: "in-person" },
+      virtual,
+    );
+    expect(match.score).toBeGreaterThan(0);
+  });
 });
 
 describe("rankCircleMatches", () => {
@@ -94,6 +106,49 @@ describe("rankCircleMatches", () => {
   it("surfaces the leadership lab near the top for Bay Area leadership prefs", () => {
     const ranked = rankCircleMatches(bayAreaPrefs, SEED_CIRCLES);
     expect(ranked[0].circle.slug).toBe("bay-area-leadership-lab");
+  });
+
+  it("scores every Circle even when only one or two strongly match format", () => {
+    // Catalog where only two Circles strongly match a virtual preference.
+    const catalog: Circle[] = SEED_CIRCLES.map((circle, index) => {
+      if (index === 0) return { ...circle, format: "virtual" };
+      if (index === 1) return { ...circle, format: "hybrid" };
+      return { ...circle, format: "in-person" };
+    });
+
+    const prefs: MatchFormInput = {
+      ...bayAreaPrefs,
+      format: "virtual",
+    };
+
+    const strongFormatMatches = catalog.filter(
+      (circle) => circle.format === "virtual" || circle.format === "hybrid",
+    );
+    expect(strongFormatMatches.length).toBe(2);
+
+    const ranked = rankCircleMatches(prefs, catalog);
+    expect(ranked).toHaveLength(catalog.length);
+
+    const top = ranked.slice(0, 3);
+    expect(top).toHaveLength(3);
+    expect(top.every((match) => Number.isFinite(match.score))).toBe(true);
+
+    // Strong format fits should appear, but mismatches remain in the ranked set.
+    expect(
+      top.filter(
+        (match) =>
+          match.circle.format === "virtual" || match.circle.format === "hybrid",
+      ).length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(ranked.some((match) => match.circle.format === "in-person")).toBe(
+      true,
+    );
+  });
+
+  it("topRankedMatches returns a finite slice without filling to three", () => {
+    const twoCircles = SEED_CIRCLES.slice(0, 2);
+    const top = topRankedMatches(bayAreaPrefs, twoCircles, 3);
+    expect(top).toHaveLength(2);
   });
 });
 

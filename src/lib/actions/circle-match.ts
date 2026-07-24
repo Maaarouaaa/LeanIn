@@ -9,7 +9,11 @@ import {
   preferencesFromInput,
 } from "@/lib/data/types";
 import { logSupabaseError } from "@/lib/supabase/server";
-import { TimeoutError } from "@/lib/with-timeout";
+import {
+  SUPABASE_QUERY_TIMEOUT_MS,
+  TimeoutError,
+  withTimeout,
+} from "@/lib/with-timeout";
 import type {
   CircleMatch,
   JoinRequest,
@@ -169,95 +173,128 @@ export async function getRankedMatches(filters?: {
     mode: "supabase" | "memory";
   }>
 > {
+  const started = Date.now();
   logStage("getRankedMatches", "start");
+
   try {
-    await requireAuthenticatedMember();
-    const store = await getDataStore();
-    const profile = await store.getDemoProfile();
-    if (!profile.preferences) {
-      logStage("getRankedMatches", "end", {
-        ok: true,
-        mode: store.mode,
-        matchCount: 0,
-        reason: "no-preferences",
-      });
-      return {
-        ok: true,
-        data: {
-          matches: [],
-          allMatches: [],
-          preferences: null,
-          mode: store.mode,
-        },
-      };
-    }
-
-    const input = inputFromPreferences(profile.preferences);
-    if (!input) {
-      logStage("getRankedMatches", "end", {
-        ok: true,
-        mode: store.mode,
-        matchCount: 0,
-        reason: "incomplete-preferences",
-      });
-      return {
-        ok: true,
-        data: {
-          matches: [],
-          allMatches: [],
-          preferences: profile.preferences,
-          mode: store.mode,
-        },
-      };
-    }
-
-    const circles = await store.listCircles();
-    let ranked = rankCircleMatches(input, circles);
-
-    if (filters?.format && filters.format !== "all") {
-      ranked = ranked.filter((match) => {
-        if (filters.format === "virtual") {
-          return (
-            match.circle.format === "virtual" ||
-            match.circle.format === "hybrid"
-          );
-        }
-        if (filters.format === "in-person") {
-          return (
-            match.circle.format === "in-person" ||
-            match.circle.format === "hybrid"
-          );
-        }
-        return true;
-      });
-    }
-
-    if (filters?.weeknights) {
-      ranked = ranked.filter((match) => match.circle.meetsWeeknights);
-    }
-
+    const result = await withTimeout(
+      computeRankedMatches(filters),
+      SUPABASE_QUERY_TIMEOUT_MS,
+      "Loading matches timed out. Please try again.",
+    );
     logStage("getRankedMatches", "end", {
-      ok: true,
-      mode: store.mode,
-      matchCount: ranked.length,
+      ok: result.ok,
+      ms: Date.now() - started,
+      matchCount: result.ok ? result.data.matches.length : 0,
     });
-    return {
-      ok: true,
-      data: {
-        matches: ranked.slice(0, 3),
-        allMatches: ranked,
-        preferences: profile.preferences,
-        mode: store.mode,
-      },
-    };
+    return result;
   } catch (error) {
     logActionError("getRankedMatches failed", error);
-    logStage("getRankedMatches", "end", { ok: false });
+    logStage("getRankedMatches", "end", {
+      ok: false,
+      reason: error instanceof TimeoutError ? "timeout" : "exception",
+      ms: Date.now() - started,
+    });
     return {
       ok: false,
       error: toUserFacingError(error, "Unable to load Circle matches."),
     };
   }
+}
+
+/**
+ * Rank every retrieved Circle by preference score, then return the top three.
+ * Optional UI filters may narrow the list but never retry/fill back up to three.
+ */
+async function computeRankedMatches(filters?: {
+  format?: string;
+  weeknights?: boolean;
+}): Promise<
+  ActionResult<{
+    matches: CircleMatch[];
+    allMatches: CircleMatch[];
+    preferences: MemberPreferences | null;
+    mode: "supabase" | "memory";
+  }>
+> {
+  await requireAuthenticatedMember();
+  const store = await getDataStore();
+  const profile = await store.getDemoProfile();
+
+  if (!profile.preferences) {
+    return {
+      ok: true,
+      data: {
+        matches: [],
+        allMatches: [],
+        preferences: null,
+        mode: store.mode,
+      },
+    };
+  }
+
+  const input = inputFromPreferences(profile.preferences);
+  if (!input) {
+    return {
+      ok: true,
+      data: {
+        matches: [],
+        allMatches: [],
+        preferences: profile.preferences,
+        mode: store.mode,
+      },
+    };
+  }
+
+  logStage("getRankedMatches.listCircles", "start");
+  const circles = await store.listCircles();
+  const circleList = Array.isArray(circles) ? circles : [];
+  logStage("getRankedMatches.listCircles", "end", {
+    ok: true,
+    circleCount: circleList.length,
+  });
+
+  // Preferences affect scores only — every Circle is scored and sorted once.
+  const ranked = rankCircleMatches(input, circleList);
+
+  // Optional display filters: narrow only, never loop to refill length === 3.
+  let displayRanked = ranked;
+  if (filters?.format && filters.format !== "all") {
+    displayRanked = displayRanked.filter((match) => {
+      if (filters.format === "virtual") {
+        return (
+          match.circle.format === "virtual" || match.circle.format === "hybrid"
+        );
+      }
+      if (filters.format === "in-person") {
+        return (
+          match.circle.format === "in-person" ||
+          match.circle.format === "hybrid"
+        );
+      }
+      return true;
+    });
+  }
+  if (filters?.weeknights) {
+    displayRanked = displayRanked.filter((match) => match.circle.meetsWeeknights);
+  }
+
+  const matches = displayRanked.slice(0, 3);
+  console.info("[circle-match] stage:getRankedMatches.results", {
+    scoredCount: ranked.length,
+    afterFilters: displayRanked.length,
+    returned: matches.length,
+  });
+
+  return {
+    ok: true,
+    data: {
+      matches,
+      allMatches: displayRanked,
+      preferences: profile.preferences,
+      mode: store.mode,
+    },
+  };
 }
 
 export async function createJoinRequestAction(input: {

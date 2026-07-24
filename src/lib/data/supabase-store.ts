@@ -200,7 +200,11 @@ export const supabaseStore: DataStore = {
         .select("*")
         .order("name", { ascending: true }),
     );
-    return (data as CircleRow[]).map(mapCircle);
+    const rows = Array.isArray(data) ? (data as CircleRow[]) : [];
+    console.info("[circle-match] stage:supabase.circles.listCircles mapped", {
+      rowCount: rows.length,
+    });
+    return rows.map(mapCircle);
   },
 
   async getCircleBySlug(slug) {

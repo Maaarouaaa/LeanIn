@@ -72,7 +72,8 @@ function formatCompatible(
   if (preference === "either") return 1;
   if (preference === circleFormat) return 1;
   if (circleFormat === "hybrid") return 0.85;
-  return 0;
+  // Soft penalty only — never gate Circles out of the ranked set.
+  return 0.25;
 }
 
 function frequencyCompatible(
@@ -165,13 +166,15 @@ export function scoreCircleMatch(
     circle.topics,
   );
   const goalWeighted = goalScore * MATCH_WEIGHTS.goals;
+  const locationScore = locationCompatible(preferences, circle);
   reasons.push({
     label: "Shared goals",
     detail:
       overlap.length > 0
-        ? `${overlap.map((goal) => GOAL_LABELS[goal]).join(" + ")}${
-            locationCompatible(preferences, circle) >= 1 &&
-            !isVirtualLocation(circle.location)
+        ? `${overlap
+            .map((goal) => GOAL_LABELS[goal] ?? goal)
+            .join(" + ")}${
+            locationScore >= 1 && !isVirtualLocation(circle.location)
               ? " + your location"
               : ""
           }.`
@@ -194,7 +197,6 @@ export function scoreCircleMatch(
     weight: MATCH_WEIGHTS.format,
   });
 
-  const locationScore = locationCompatible(preferences, circle);
   const locationWeighted = locationScore * MATCH_WEIGHTS.location;
   reasons.push({
     label: "Location",
@@ -226,13 +228,15 @@ export function scoreCircleMatch(
     circle.careerStages,
   );
   const careerWeighted = careerScore * MATCH_WEIGHTS.careerStage;
+  const careerLabel =
+    CAREER_STAGE_LABELS[preferences.careerStage] ?? preferences.careerStage;
   reasons.push({
     label: "Career stage",
     detail:
       careerScore === 1
-        ? `Designed for ${CAREER_STAGE_LABELS[preferences.careerStage].toLowerCase()} members.`
+        ? `Designed for ${careerLabel.toLowerCase()} members.`
         : careerScore > 0
-          ? `Welcomes adjacent stages, including ${CAREER_STAGE_LABELS[preferences.careerStage].toLowerCase()}.`
+          ? `Welcomes adjacent stages, including ${careerLabel.toLowerCase()}.`
           : `Primarily serves other career stages.`,
     weight: MATCH_WEIGHTS.careerStage,
   });
@@ -268,16 +272,66 @@ export function scoreCircleMatch(
   return { circle, score, reasons: sortedReasons };
 }
 
+/**
+ * Score every Circle once, sort descending, and return the full ranked list.
+ * Callers take `ranked.slice(0, 3)` — never loop/retry until length === 3.
+ * Preferences affect scores only; incompatible Circles stay in the set.
+ */
 export function rankCircleMatches(
   preferences: MatchFormInput,
   circles: Circle[],
 ): CircleMatch[] {
-  return circles
-    .map((circle) => scoreCircleMatch(preferences, circle))
-    .sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
-      return a.circle.name.localeCompare(b.circle.name);
-    });
+  // Materialize a finite array — never iterate an open-ended source.
+  const list = Array.isArray(circles) ? circles.slice() : [];
+  console.info("[circle-match] stage:rank.circlesRetrieved", {
+    count: list.length,
+  });
+
+  console.info("[circle-match] stage:rank.scoreCalculation start", {
+    count: list.length,
+  });
+  const scored: CircleMatch[] = [];
+  for (let index = 0; index < list.length; index += 1) {
+    const circle = list[index];
+    try {
+      scored.push(scoreCircleMatch(preferences, circle));
+    } catch (error) {
+      console.error("[circle-match] stage:rank.scoreCalculation circle failed", {
+        index,
+        slug: circle?.slug ?? null,
+        message: error instanceof Error ? error.message : "unknown",
+      });
+      scored.push({ circle, score: 0, reasons: [] });
+    }
+  }
+  console.info("[circle-match] stage:rank.scoreCalculation end", {
+    scoredCount: scored.length,
+  });
+
+  console.info("[circle-match] stage:rank.sort start", {
+    scoredCount: scored.length,
+  });
+  scored.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return a.circle.name.localeCompare(b.circle.name);
+  });
+  console.info("[circle-match] stage:rank.sort end", {
+    scoredCount: scored.length,
+  });
+
+  console.info("[circle-match] stage:rank.results", {
+    returned: scored.length,
+  });
+  return scored;
+}
+
+/** Top recommendations — always a finite slice, never a fill loop. */
+export function topRankedMatches(
+  preferences: MatchFormInput,
+  circles: Circle[],
+  limit = 3,
+): CircleMatch[] {
+  return rankCircleMatches(preferences, circles).slice(0, limit);
 }
 
 export function explainTopMatch(match: CircleMatch): string {

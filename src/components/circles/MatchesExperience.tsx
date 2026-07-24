@@ -14,19 +14,23 @@ type FilterValue = "all" | "virtual" | "in-person" | "weeknights";
 
 interface MatchesExperienceProps {
   matches: CircleMatch[];
+  allMatches?: CircleMatch[];
   preferences: MemberPreferences | null;
   error?: string | null;
 }
 
 export function MatchesExperience({
   matches,
+  allMatches,
   preferences,
   error,
 }: MatchesExperienceProps) {
   const [filter, setFilter] = useState<FilterValue>("all");
 
   const filtered = useMemo(() => {
-    return matches.filter((match) => {
+    // Filter the full ranked set, then take up to three — never fill/retry to length 3.
+    const pool = allMatches?.length ? allMatches : matches;
+    const next = pool.filter((match) => {
       if (filter === "virtual") {
         return (
           match.circle.format === "virtual" || match.circle.format === "hybrid"
@@ -41,7 +45,8 @@ export function MatchesExperience({
       if (filter === "weeknights") return match.circle.meetsWeeknights;
       return true;
     });
-  }, [filter, matches]);
+    return next.slice(0, 3);
+  }, [allMatches, filter, matches]);
 
   if (!preferences) {
     return (

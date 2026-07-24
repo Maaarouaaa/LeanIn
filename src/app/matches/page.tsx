@@ -34,6 +34,7 @@ export default async function MatchesPage() {
       <div className="mx-auto max-w-[1440px] space-y-8 px-4 py-10 sm:px-6 lg:px-10 lg:py-14">
         <MatchesExperience
           matches={result.ok ? result.data.matches : []}
+          allMatches={result.ok ? result.data.allMatches : []}
           preferences={result.ok ? result.data.preferences : null}
           error={result.ok ? null : result.error}
         />
