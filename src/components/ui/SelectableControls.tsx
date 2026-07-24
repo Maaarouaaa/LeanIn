@@ -56,6 +56,7 @@ interface RadioPillProps {
   checked: boolean;
   onChange: () => void;
   disabled?: boolean;
+  required?: boolean;
 }
 
 export function RadioPill({
@@ -65,6 +66,7 @@ export function RadioPill({
   checked,
   onChange,
   disabled,
+  required,
 }: RadioPillProps) {
   return (
     <label
@@ -81,6 +83,7 @@ export function RadioPill({
         value={value}
         checked={checked}
         disabled={disabled}
+        required={required}
         onChange={onChange}
       />
       {label}

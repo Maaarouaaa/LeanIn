@@ -25,7 +25,9 @@ import type {
   MemberPreferences,
 } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+
+const CLIENT_SAVE_TIMEOUT_MS = 10_000;
 
 interface MatchFormProps {
   initialPreferences?: MemberPreferences | null;
@@ -56,15 +58,41 @@ function toFormState(preferences?: MemberPreferences | null): FormState {
   };
 }
 
+async function withClientTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  message: string,
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(message)), ms);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 export function MatchForm({ initialPreferences }: MatchFormProps) {
   const router = useRouter();
   const { pushToast } = useToast();
   const formErrorId = useId();
+  const submittingRef = useRef(false);
   const [form, setForm] = useState<FormState>(() =>
     toFormState(initialPreferences),
   );
   const [errors, setErrors] = useState<FormErrors>({});
+  // Single source of truth for loading — do not mix with useTransition/useActionState.
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Avoid native pre-hydration submits (full page reload / loading skeleton, no server action).
+  const [clientReady, setClientReady] = useState(false);
+
+  useEffect(() => {
+    setClientReady(true);
+  }, []);
 
   function toggleGoal(value: Goal) {
     if (isSubmitting) return;
@@ -99,27 +127,46 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
     return next;
   }
 
-  async function handleSubmit(event: React.FormEvent) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    console.log("[circle-match] MatchForm onSubmit fired");
     event.preventDefault();
-    if (isSubmitting) return;
+
+    const formEl = event.currentTarget;
+
+    // Prevent double-submit while a request is in flight.
+    if (submittingRef.current || isSubmitting) return;
 
     const nextErrors = validate();
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length) return;
+    const nativeValid = formEl.checkValidity();
 
+    if (Object.keys(nextErrors).length > 0 || !nativeValid) {
+      setErrors(nextErrors);
+      formEl.reportValidity();
+      // Loading must remain false on validation failure.
+      setIsSubmitting(false);
+      submittingRef.current = false;
+      return;
+    }
+
+    // Start loading only after validation passes.
+    submittingRef.current = true;
     setIsSubmitting(true);
     setErrors((prev) => ({ ...prev, form: undefined }));
 
     try {
-      const result = await saveMemberPreferences({
-        goals: form.goals,
-        careerStage: form.careerStage as CareerStage,
-        format: form.format as MeetingFormat,
-        frequency: form.frequency as MeetingFrequency,
-        location: form.location,
-        availability: form.availability,
-        includeVirtualOutsideLocation: form.includeVirtualOutsideLocation,
-      });
+      const result = await withClientTimeout(
+        saveMemberPreferences({
+          goals: form.goals,
+          careerStage: form.careerStage as CareerStage,
+          format: form.format as MeetingFormat,
+          frequency: form.frequency as MeetingFrequency,
+          location: form.location,
+          availability: form.availability,
+          includeVirtualOutsideLocation: form.includeVirtualOutsideLocation,
+        }),
+        CLIENT_SAVE_TIMEOUT_MS,
+        "Saving preferences timed out. Please try again.",
+      );
 
       if (!result.ok) {
         setErrors({ form: result.error });
@@ -128,7 +175,6 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
       }
 
       pushToast("Preferences saved. Finding your Circles…", "success");
-      // Navigate only after a successful save. Do not force-nav on failure.
       router.push("/matches");
     } catch (error) {
       const message =
@@ -138,6 +184,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
       setErrors({ form: message });
       pushToast(message, "error");
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   }
@@ -146,6 +193,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
     <form
       onSubmit={handleSubmit}
       className="space-y-12"
+      // Use noValidate so onSubmit always fires; we call checkValidity/reportValidity ourselves.
       noValidate
       aria-busy={isSubmitting || undefined}
     >
@@ -165,6 +213,16 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
 
         <fieldset>
           <legend className="sr-only">Support goals</legend>
+          {/* Native required sentinel so form.checkValidity() covers goals. */}
+          <input
+            tabIndex={-1}
+            aria-hidden="true"
+            className="sr-only"
+            name="goals-validity"
+            required
+            value={form.goals.length > 0 ? "ok" : ""}
+            onChange={() => {}}
+          />
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {GOAL_OPTIONS.map((option, index) => (
               <GoalCard
@@ -208,6 +266,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
               id="careerStage"
               name="careerStage"
               value={form.careerStage}
+              required
               error={Boolean(errors.careerStage)}
               disabled={isSubmitting}
               aria-invalid={Boolean(errors.careerStage)}
@@ -237,6 +296,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
               id="frequency"
               name="frequency"
               value={form.frequency}
+              required
               error={Boolean(errors.frequency)}
               disabled={isSubmitting}
               aria-invalid={Boolean(errors.frequency)}
@@ -263,6 +323,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
               name="location"
               placeholder="Oakland, CA"
               value={form.location}
+              required
               error={Boolean(errors.location)}
               disabled={isSubmitting}
               aria-required="true"
@@ -305,7 +366,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
             Preferred format <span className="text-error">*</span>
           </legend>
           <div className="flex flex-wrap gap-2">
-            {FORMAT_OPTIONS.map((option) => (
+            {FORMAT_OPTIONS.map((option, index) => (
               <RadioPill
                 key={option.value}
                 name="format"
@@ -313,6 +374,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
                 value={option.value}
                 checked={form.format === option.value}
                 disabled={isSubmitting}
+                required={index === 0}
                 onChange={() =>
                   setForm((current) => ({ ...current, format: option.value }))
                 }
@@ -361,7 +423,7 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
           size="lg"
           loading={isSubmitting}
           loadingLabel="Matching…"
-          disabled={isSubmitting}
+          disabled={!clientReady || isSubmitting}
           aria-describedby={errors.form ? formErrorId : undefined}
           className="sm:min-w-56"
         >

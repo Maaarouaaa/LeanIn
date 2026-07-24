@@ -41,6 +41,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
+      {...props}
       type={type}
       className={cn(
         "inline-flex items-center justify-center gap-2 rounded-full font-semibold tracking-wide transition-colors motion-safe-transition disabled:cursor-not-allowed",
@@ -48,9 +49,8 @@ export function Button({
         sizeClasses[size],
         className,
       )}
-      disabled={disabled || loading}
+      disabled={Boolean(disabled || loading)}
       aria-busy={loading || undefined}
-      {...props}
     >
       {loading ? (
         <span
