@@ -17,11 +17,11 @@ interface EditorialHeroProps {
 }
 
 /**
- * Asymmetrical angular yellow edge overlapping the photograph.
- * Tips extend ~5.5–6.5rem (88–104px) into the image column.
+ * Soft rounded yellow edge overlapping the photograph.
+ * viewBox path: two bold curved scoops (~70–110px into the image column).
  */
-const HERO_YELLOW_CLIP =
-  "polygon(0% 0%, calc(100% - 5.5rem) 0%, 100% 14%, calc(100% - 2.75rem) 36%, 100% 58%, calc(100% - 4.25rem) 78%, calc(100% - 5.75rem) 100%, 0% 100%)";
+const HERO_YELLOW_PATH =
+  "M0 0 H74 C86 6 96 16 90 30 C84 44 98 52 92 66 C86 80 80 90 74 100 H0 Z";
 
 export function EditorialHero({
   eyebrow,
@@ -79,7 +79,7 @@ export function EditorialHero({
       data-editorial-hero="split"
     >
       <div className="relative mx-auto max-w-[1440px]">
-        {/* Hero copy — width keeps text clear of the jagged overlap */}
+        {/* Hero copy — width keeps text clear of the rounded overlap */}
         <div className="relative z-20 px-4 pb-6 pt-10 sm:px-8 md:w-[48%] md:pb-14 md:pt-16 lg:w-[46%] lg:px-10 lg:pb-16 lg:pt-20">
           {outlineWord ? (
             <span className="outline-word absolute left-2 top-8 text-[22vw] leading-none lg:text-[8.5rem]">
@@ -102,7 +102,7 @@ export function EditorialHero({
 
         {/*
           Photograph: ~50% desktop width, reduced height, rectangular with
-          subtle top-right rounding. Under the angular yellow overlay.
+          subtle top-right rounding. Under the rounded yellow overlay.
         */}
         <div className="relative z-10 px-4 pb-8 pt-2 sm:px-6 md:absolute md:right-0 md:top-1/2 md:w-[50%] md:-translate-y-1/2 md:px-0 md:pb-0 md:pt-0">
           <div
@@ -135,13 +135,16 @@ export function EditorialHero({
           ) : null}
         </div>
 
-        {/* Decorative yellow shape — angular notches over the photo */}
-        <div
+        {/* Decorative yellow shape — soft rounded scoops over the photo */}
+        <svg
           aria-hidden="true"
           data-hero-yellow-overlap=""
-          className="pointer-events-none absolute inset-y-0 left-0 z-[15] hidden w-[calc(50%+5.5rem)] bg-yellow md:block lg:w-[calc(50%+6.5rem)]"
-          style={{ clipPath: HERO_YELLOW_CLIP }}
-        />
+          className="pointer-events-none absolute inset-y-0 left-0 z-[15] hidden h-full w-[calc(50%+5.5rem)] text-yellow md:block lg:w-[calc(50%+6.5rem)]"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+        >
+          <path fill="currentColor" d={HERO_YELLOW_PATH} />
+        </svg>
       </div>
       {children}
     </section>

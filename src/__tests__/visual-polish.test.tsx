@@ -47,7 +47,7 @@ describe("ViewCircleLink", () => {
 describe("EditorialHero split", () => {
   afterEach(() => cleanup());
 
-  it("uses a rectangular photo with an angular yellow overlap instead of a blob", () => {
+  it("uses a rectangular photo with a rounded yellow overlap instead of a blob", () => {
     const { container } = render(
       <EditorialHero
         tone="split"
@@ -75,11 +75,14 @@ describe("EditorialHero split", () => {
 
     const overlap = container.querySelector(
       "[data-hero-yellow-overlap]",
-    ) as HTMLElement | null;
+    ) as SVGElement | null;
     expect(overlap).not.toBeNull();
     expect(overlap?.getAttribute("aria-hidden")).toBe("true");
-    expect(overlap?.className).toMatch(/pointer-events-none/);
-    expect(overlap?.style.clipPath || "").toMatch(/polygon/);
+    expect(overlap?.getAttribute("class") || "").toMatch(/pointer-events-none/);
+    expect(overlap?.querySelector("path")).not.toBeNull();
+    expect(overlap?.querySelector("path")?.getAttribute("d") || "").toMatch(
+      /C\d/,
+    );
     expect(screen.getByText("About 3 minutes")).toBeInTheDocument();
   });
 });
