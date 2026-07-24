@@ -56,9 +56,11 @@ function validatePreferences(input: MatchFormInput): string | null {
 
 export async function saveMemberPreferences(
   input: MatchFormInput,
+  submissionId?: string,
 ): Promise<ActionResult<{ profile: Profile; mode: "supabase" | "memory" }>> {
   const actionStarted = Date.now();
   logStage("saveMemberPreferences", "start", {
+    submissionId: submissionId ?? null,
     goalCount: input.goals?.length ?? 0,
     hasCareerStage: Boolean(input.careerStage),
     hasFormat: Boolean(input.format),
@@ -69,6 +71,7 @@ export async function saveMemberPreferences(
   const validationError = validatePreferences(input);
   if (validationError) {
     logStage("saveMemberPreferences", "end", {
+      submissionId: submissionId ?? null,
       ok: false,
       reason: "validation",
       ms: Date.now() - actionStarted,
@@ -78,16 +81,22 @@ export async function saveMemberPreferences(
 
   // Keep redirect()/navigation on the client. Next.js implements redirect via throw.
   try {
-    logStage("saveMemberPreferences.auth", "start");
+    logStage("saveMemberPreferences.auth", "start", {
+      submissionId: submissionId ?? null,
+    });
     const memberId = await requireAuthenticatedMember();
     logStage("saveMemberPreferences.auth", "end", {
+      submissionId: submissionId ?? null,
       ok: true,
       memberIdPresent: Boolean(memberId),
     });
 
-    logStage("saveMemberPreferences.getDataStore", "start");
+    logStage("saveMemberPreferences.getDataStore", "start", {
+      submissionId: submissionId ?? null,
+    });
     const store = await getDataStore();
     logStage("saveMemberPreferences.getDataStore", "end", {
+      submissionId: submissionId ?? null,
       ok: true,
       mode: store.mode,
     });
@@ -95,16 +104,19 @@ export async function saveMemberPreferences(
     const preferences = preferencesFromInput(input);
 
     logStage("saveMemberPreferences.savePreferences", "start", {
+      submissionId: submissionId ?? null,
       mode: store.mode,
     });
     const profile = await store.savePreferences(memberId, preferences);
     logStage("saveMemberPreferences.savePreferences", "end", {
+      submissionId: submissionId ?? null,
       ok: true,
       mode: store.mode,
       profileIdPresent: Boolean(profile?.id),
     });
 
     logStage("saveMemberPreferences", "end", {
+      submissionId: submissionId ?? null,
       ok: true,
       mode: store.mode,
       ms: Date.now() - actionStarted,
@@ -113,6 +125,7 @@ export async function saveMemberPreferences(
   } catch (error) {
     logActionError("saveMemberPreferences failed", error);
     logStage("saveMemberPreferences", "end", {
+      submissionId: submissionId ?? null,
       ok: false,
       reason: error instanceof TimeoutError ? "timeout" : "exception",
       ms: Date.now() - actionStarted,
@@ -162,10 +175,13 @@ export async function getMemberPreferences(): Promise<
   }
 }
 
-export async function getRankedMatches(filters?: {
-  format?: string;
-  weeknights?: boolean;
-}): Promise<
+export async function getRankedMatches(
+  filters?: {
+    format?: string;
+    weeknights?: boolean;
+  },
+  submissionId?: string,
+): Promise<
   ActionResult<{
     matches: CircleMatch[];
     allMatches: CircleMatch[];
@@ -174,15 +190,18 @@ export async function getRankedMatches(filters?: {
   }>
 > {
   const started = Date.now();
-  logStage("getRankedMatches", "start");
+  logStage("getRankedMatches", "start", {
+    submissionId: submissionId ?? null,
+  });
 
   try {
     const result = await withTimeout(
-      computeRankedMatches(filters),
+      computeRankedMatches(filters, submissionId),
       SUPABASE_QUERY_TIMEOUT_MS,
       "Loading matches timed out. Please try again.",
     );
     logStage("getRankedMatches", "end", {
+      submissionId: submissionId ?? null,
       ok: result.ok,
       ms: Date.now() - started,
       matchCount: result.ok ? result.data.matches.length : 0,
@@ -191,6 +210,7 @@ export async function getRankedMatches(filters?: {
   } catch (error) {
     logActionError("getRankedMatches failed", error);
     logStage("getRankedMatches", "end", {
+      submissionId: submissionId ?? null,
       ok: false,
       reason: error instanceof TimeoutError ? "timeout" : "exception",
       ms: Date.now() - started,
@@ -206,10 +226,13 @@ export async function getRankedMatches(filters?: {
  * Rank every retrieved Circle by preference score, then return the top three.
  * Optional UI filters may narrow the list but never retry/fill back up to three.
  */
-async function computeRankedMatches(filters?: {
-  format?: string;
-  weeknights?: boolean;
-}): Promise<
+async function computeRankedMatches(
+  filters?: {
+    format?: string;
+    weeknights?: boolean;
+  },
+  submissionId?: string,
+): Promise<
   ActionResult<{
     matches: CircleMatch[];
     allMatches: CircleMatch[];
@@ -246,10 +269,13 @@ async function computeRankedMatches(filters?: {
     };
   }
 
-  logStage("getRankedMatches.listCircles", "start");
+  logStage("getRankedMatches.listCircles", "start", {
+    submissionId: submissionId ?? null,
+  });
   const circles = await store.listCircles();
   const circleList = Array.isArray(circles) ? circles : [];
   logStage("getRankedMatches.listCircles", "end", {
+    submissionId: submissionId ?? null,
     ok: true,
     circleCount: circleList.length,
   });
@@ -281,6 +307,7 @@ async function computeRankedMatches(filters?: {
 
   const matches = displayRanked.slice(0, 3);
   console.info("[circle-match] stage:getRankedMatches.results", {
+    submissionId: submissionId ?? null,
     scoredCount: ranked.length,
     afterFilters: displayRanked.length,
     returned: matches.length,

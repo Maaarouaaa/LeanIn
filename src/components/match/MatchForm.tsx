@@ -24,7 +24,6 @@ import type {
   MeetingFrequency,
   MemberPreferences,
 } from "@/lib/types";
-import { useRouter } from "next/navigation";
 import { useId, useRef, useState, useSyncExternalStore } from "react";
 
 const CLIENT_SAVE_TIMEOUT_MS = 10_000;
@@ -88,8 +87,14 @@ async function withClientTimeout<T>(
   }
 }
 
+function createSubmissionId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `sub_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export function MatchForm({ initialPreferences }: MatchFormProps) {
-  const router = useRouter();
   const { pushToast } = useToast();
   const formErrorId = useId();
   const submittingRef = useRef(false);
@@ -140,18 +145,33 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    console.log("[circle-match] MatchForm onSubmit fired");
+    const submissionId = createSubmissionId();
+    console.log("[circle-match] MatchForm onSubmit fired", { submissionId });
     event.preventDefault();
 
     const formEl = event.currentTarget;
 
     // Prevent double-submit while a request is in flight.
-    if (submittingRef.current || isSubmitting) return;
+    if (submittingRef.current || isSubmitting) {
+      console.log("[circle-match] MatchForm submit ignored (already pending)", {
+        submissionId,
+      });
+      return;
+    }
 
     const nextErrors = validate();
     const nativeValid = formEl.checkValidity();
+    const valid =
+      Object.keys(nextErrors).length === 0 && nativeValid;
 
-    if (Object.keys(nextErrors).length > 0 || !nativeValid) {
+    console.log("[circle-match] MatchForm validation result", {
+      submissionId,
+      valid,
+      nativeValid,
+      errorKeys: Object.keys(nextErrors),
+    });
+
+    if (!valid) {
       setErrors(nextErrors);
       formEl.reportValidity();
       // Loading must remain false on validation failure.
@@ -167,28 +187,44 @@ export function MatchForm({ initialPreferences }: MatchFormProps) {
 
     try {
       const result = await withClientTimeout(
-        saveMemberPreferences({
-          goals: form.goals,
-          careerStage: form.careerStage as CareerStage,
-          format: form.format as MeetingFormat,
-          frequency: form.frequency as MeetingFrequency,
-          location: form.location,
-          availability: form.availability,
-          includeVirtualOutsideLocation: form.includeVirtualOutsideLocation,
-        }),
+        saveMemberPreferences(
+          {
+            goals: form.goals,
+            careerStage: form.careerStage as CareerStage,
+            format: form.format as MeetingFormat,
+            frequency: form.frequency as MeetingFrequency,
+            location: form.location,
+            availability: form.availability,
+            includeVirtualOutsideLocation: form.includeVirtualOutsideLocation,
+          },
+          submissionId,
+        ),
         CLIENT_SAVE_TIMEOUT_MS,
         "Saving preferences timed out. Please try again.",
       );
 
       if (!result.ok) {
+        console.error("[circle-match] MatchForm save failed", {
+          submissionId,
+          error: result.error,
+        });
         setErrors({ form: result.error });
         pushToast(result.error, "error");
         return;
       }
 
+      console.log("[circle-match] MatchForm navigation start", {
+        submissionId,
+        href: `/matches?sid=${submissionId}`,
+      });
       pushToast("Preferences saved. Finding your Circles…", "success");
-      router.push("/matches");
+      // Deterministic full navigation — do not leave this inside a React transition.
+      window.location.assign(`/matches?sid=${encodeURIComponent(submissionId)}`);
     } catch (error) {
+      console.error("[circle-match] MatchForm submit exception", {
+        submissionId,
+        message: error instanceof Error ? error.message : "unknown",
+      });
       const message =
         error instanceof Error
           ? error.message

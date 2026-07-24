@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const push = vi.fn();
 const pushToast = vi.fn();
 const saveMemberPreferences = vi.fn();
+const locationAssign = vi.fn();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push, refresh: vi.fn() }),
@@ -38,11 +39,18 @@ describe("MatchForm submission", () => {
     push.mockReset();
     pushToast.mockReset();
     saveMemberPreferences.mockReset();
+    locationAssign.mockReset();
+    vi.stubGlobal("location", {
+      ...window.location,
+      assign: locationAssign,
+    });
     vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -50,7 +58,9 @@ describe("MatchForm submission", () => {
     const user = userEvent.setup();
     render(<MatchForm />);
 
-    const submit = await screen.findByRole("button", { name: /Find my Circles/i });
+    const submit = await screen.findByRole("button", {
+      name: /Find my Circles/i,
+    });
     expect(submit).toHaveAttribute("type", "submit");
     await waitFor(() => expect(submit).toBeEnabled());
 
@@ -58,11 +68,12 @@ describe("MatchForm submission", () => {
 
     expect(console.log).toHaveBeenCalledWith(
       "[circle-match] MatchForm onSubmit fired",
+      expect.objectContaining({ submissionId: expect.any(String) }),
     );
     expect(saveMemberPreferences).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: /Find my Circles/i })).not.toHaveAttribute(
-      "aria-busy",
-    );
+    expect(
+      screen.getByRole("button", { name: /Find my Circles/i }),
+    ).not.toHaveAttribute("aria-busy");
     expect(
       screen.getByText(/Select at least one support goal/i),
     ).toBeInTheDocument();
@@ -77,7 +88,9 @@ describe("MatchForm submission", () => {
 
     render(<MatchForm />);
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: /Find my Circles/i })).toBeEnabled(),
+      expect(
+        screen.getByRole("button", { name: /Find my Circles/i }),
+      ).toBeEnabled(),
     );
     await fillValidForm(user);
 
@@ -85,6 +98,7 @@ describe("MatchForm submission", () => {
 
     expect(console.log).toHaveBeenCalledWith(
       "[circle-match] MatchForm onSubmit fired",
+      expect.objectContaining({ submissionId: expect.any(String) }),
     );
 
     await waitFor(() => {
@@ -99,17 +113,17 @@ describe("MatchForm submission", () => {
         frequency: "monthly",
         location: "Oakland, CA",
       }),
+      expect.any(String),
     );
 
     await waitFor(() => {
-      expect(push).toHaveBeenCalledWith("/matches");
+      expect(locationAssign).toHaveBeenCalledWith(
+        expect.stringMatching(/^\/matches\?sid=/),
+      );
     });
 
-    await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: /Find my Circles/i }),
-      ).not.toHaveAttribute("aria-busy");
-    });
+    // Full navigation via window.location.assign — router.push is not used.
+    expect(push).not.toHaveBeenCalled();
   });
 
   it("shows an accessible error and resets loading when the server fails", async () => {
@@ -121,18 +135,21 @@ describe("MatchForm submission", () => {
 
     render(<MatchForm />);
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: /Find my Circles/i })).toBeEnabled(),
+      expect(
+        screen.getByRole("button", { name: /Find my Circles/i }),
+      ).toBeEnabled(),
     );
     await fillValidForm(user);
     await user.click(screen.getByRole("button", { name: /Find my Circles/i }));
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("alert"),
-      ).toHaveTextContent(/Unable to save preferences/i);
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        /Unable to save preferences/i,
+      );
     });
 
     expect(push).not.toHaveBeenCalled();
+    expect(locationAssign).not.toHaveBeenCalled();
     expect(
       screen.getByRole("button", { name: /Find my Circles/i }),
     ).not.toHaveAttribute("aria-busy");
@@ -144,13 +161,13 @@ describe("MatchForm submission", () => {
       advanceTimers: vi.advanceTimersByTime,
     });
 
-    saveMemberPreferences.mockImplementation(
-      () => new Promise(() => {}),
-    );
+    saveMemberPreferences.mockImplementation(() => new Promise(() => {}));
 
     render(<MatchForm />);
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: /Find my Circles/i })).toBeEnabled(),
+      expect(
+        screen.getByRole("button", { name: /Find my Circles/i }),
+      ).toBeEnabled(),
     );
     await fillValidForm(user);
     await user.click(screen.getByRole("button", { name: /Find my Circles/i }));
@@ -162,6 +179,7 @@ describe("MatchForm submission", () => {
     });
 
     expect(push).not.toHaveBeenCalled();
+    expect(locationAssign).not.toHaveBeenCalled();
     vi.useRealTimers();
   });
 

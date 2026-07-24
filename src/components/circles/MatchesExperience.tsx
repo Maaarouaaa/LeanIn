@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { FilterPill } from "@/components/ui/SelectableControls";
 import type { CircleMatch, MemberPreferences } from "@/lib/types";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type FilterValue = "all" | "virtual" | "in-person" | "weeknights";
 
@@ -17,6 +17,7 @@ interface MatchesExperienceProps {
   allMatches?: CircleMatch[];
   preferences: MemberPreferences | null;
   error?: string | null;
+  submissionId?: string | null;
 }
 
 export function MatchesExperience({
@@ -24,8 +25,19 @@ export function MatchesExperience({
   allMatches,
   preferences,
   error,
+  submissionId,
 }: MatchesExperienceProps) {
   const [filter, setFilter] = useState<FilterValue>("all");
+
+  useEffect(() => {
+    console.log("[circle-match] MatchesExperience render", {
+      submissionId: submissionId ?? null,
+      matchCount: matches.length,
+      allMatchCount: allMatches?.length ?? 0,
+      hasPreferences: Boolean(preferences),
+      hasError: Boolean(error),
+    });
+  }, [allMatches?.length, error, matches.length, preferences, submissionId]);
 
   const filtered = useMemo(() => {
     // Filter the full ranked set, then take up to three — never fill/retry to length 3.
@@ -48,7 +60,7 @@ export function MatchesExperience({
     return next.slice(0, 3);
   }, [allMatches, filter, matches]);
 
-  if (!preferences) {
+  if (!preferences && !error) {
     return (
       <div className="border border-ink bg-surface px-6 py-12 text-center">
         <h2 className="font-display text-4xl text-ink">Start with preferences</h2>
@@ -64,12 +76,20 @@ export function MatchesExperience({
 
   if (error) {
     return (
-      <div className="border border-error bg-error-soft px-6 py-10 text-error" role="alert">
+      <div
+        className="border border-error bg-error-soft px-6 py-10 text-error"
+        role="alert"
+      >
         <h2 className="font-display text-3xl">Unable to load matches</h2>
         <p className="mt-2 text-sm">{error}</p>
-        <Link href="/matches" className="mt-6 inline-block">
-          <Button variant="secondary">Retry</Button>
-        </Link>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link href={submissionId ? `/matches?sid=${encodeURIComponent(submissionId)}` : "/matches"}>
+            <Button variant="secondary">Retry</Button>
+          </Link>
+          <Link href="/match">
+            <Button>Edit preferences</Button>
+          </Link>
+        </div>
       </div>
     );
   }
