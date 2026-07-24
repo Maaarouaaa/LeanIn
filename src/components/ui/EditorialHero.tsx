@@ -17,11 +17,11 @@ interface EditorialHeroProps {
 }
 
 /**
- * Hand-drawn yellow edge — uneven lobes and slight wobble into the photo
- * (~70–110px). Intentionally irregular spacing/amplitude, not geometric.
+ * Soft sine-wave yellow edge overlapping the photograph.
+ * Even rounded crests/troughs (~70–110px into the image column).
  */
 const HERO_YELLOW_PATH =
-  "M0 0 H68 C75 0.4 82 1.2 87 3.5 C92 6.5 96.5 10 98.5 15 C101 21 96 24.5 91 27.5 C85 31.5 79.5 33 82.5 39 C86.5 46 95.5 47.5 99.5 53 C103 58.5 97.5 62 92 65 C85.5 69 78 70.5 81 76.5 C84.5 83 94 85.5 97 91 C99.5 95 94.5 97.5 88 99 C81.5 100.2 75 100 69 100 H0 Z";
+  "M0 0 H78 C95 8 95 17 78 25 C61 33 61 42 78 50 C95 58 95 67 78 75 C61 83 61 92 78 100 H0 Z";
 
 export function EditorialHero({
   eyebrow,
@@ -135,7 +135,7 @@ export function EditorialHero({
           ) : null}
         </div>
 
-        {/* Decorative yellow shape — hand-drawn wobble over the photo */}
+        {/* Decorative yellow shape — soft wave crests over the photo */}
         <svg
           aria-hidden="true"
           data-hero-yellow-overlap=""
@@ -143,36 +143,7 @@ export function EditorialHero({
           viewBox="0 0 100 100"
           preserveAspectRatio="none"
         >
-          <defs>
-            <filter
-              id="hero-hand-edge"
-              x="-8%"
-              y="-4%"
-              width="116%"
-              height="108%"
-              colorInterpolationFilters="sRGB"
-            >
-              <feTurbulence
-                type="fractalNoise"
-                baseFrequency="0.04 0.025"
-                numOctaves="3"
-                seed="11"
-                result="noise"
-              />
-              <feDisplacementMap
-                in="SourceGraphic"
-                in2="noise"
-                scale="2.8"
-                xChannelSelector="R"
-                yChannelSelector="G"
-              />
-            </filter>
-          </defs>
-          <path
-            fill="var(--yellow)"
-            filter="url(#hero-hand-edge)"
-            d={HERO_YELLOW_PATH}
-          />
+          <path fill="var(--yellow)" d={HERO_YELLOW_PATH} />
         </svg>
       </div>
       {children}
