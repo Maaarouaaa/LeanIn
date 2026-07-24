@@ -8,7 +8,14 @@ import { useToast } from "@/components/ui/Toast";
 import { MAX_NOTE_LENGTH } from "@/lib/constants";
 import type { Circle, JoinRequest } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 
 interface JoinRequestModalProps {
   circle: Circle;
@@ -29,6 +36,24 @@ export function JoinRequestModal({
   const [privacyAck, setPrivacyAck] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const helpId = useId();
+  const countId = useId();
+  const statusId = useId();
+  const leaderFirstName = circle.leader.name.split(/\s+/)[0] ?? circle.leader.name;
+
+  useEffect(() => {
+    if (!open) return;
+    const frame = requestAnimationFrame(() => {
+      textareaRef.current?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open]);
+
+  const handleClose = useCallback(() => {
+    if (isPending) return;
+    onClose();
+  }, [isPending, onClose]);
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -79,6 +104,7 @@ export function JoinRequestModal({
       pushToast("Your request was sent to the Circle leader.", "success");
       onSuccess(request);
       setNote("");
+      setError(null);
       onClose();
       router.refresh();
     });
@@ -87,16 +113,15 @@ export function JoinRequestModal({
   return (
     <Modal
       open={open}
-      onClose={() => {
-        if (!isPending) onClose();
-      }}
+      onClose={handleClose}
       title={circle.name}
+      description={`Share a short note with ${circle.leader.name} about why you’d like to join.`}
       footer={
         <div className="space-y-3">
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <Button
               variant="secondary"
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isPending}
               className="w-full sm:w-auto"
             >
@@ -120,7 +145,7 @@ export function JoinRequestModal({
     >
       <form id="join-request-form" onSubmit={handleSubmit} className="space-y-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <p className="max-w-md text-sm text-ink-soft">
+          <p id={helpId} className="max-w-md text-sm text-ink-soft">
             Share what drew you to the Circle or what you hope to learn. A short
             note helps {circle.leader.name} understand whether this community is
             the right fit for you.
@@ -136,22 +161,22 @@ export function JoinRequestModal({
         <div className="space-y-2">
           <div className="flex items-baseline justify-between gap-3">
             <label htmlFor="join-note" className="text-sm font-bold text-ink">
-              Include a short note to {circle.leader.name.split(" ")[0]}
+              Include a short note to {leaderFirstName}
             </label>
-            <span className="type-meta italic text-ink-muted">
-              Optional
-            </span>
+            <span className="type-meta italic text-ink-muted">Optional</span>
           </div>
           <TextArea
+            ref={textareaRef}
             id="join-note"
             name="note"
             placeholder="Hi Maya, I'm growing into a broader team leadership role and would value a thoughtful peer group for navigating influence and change."
             value={note}
             disabled={isPending}
             maxLength={MAX_NOTE_LENGTH}
+            aria-describedby={`${helpId} ${countId}`}
             onChange={(event) => setNote(event.target.value)}
           />
-          <p className="text-right text-xs text-ink-muted">
+          <p id={countId} className="text-right text-xs text-ink-muted">
             {note.length} / {MAX_NOTE_LENGTH}
           </p>
         </div>
@@ -166,11 +191,13 @@ export function JoinRequestModal({
           <span>Your note is visible only to the Circle leader.</span>
         </label>
 
-        {error ? (
-          <StatusBanner tone="error" title="Request could not be sent">
-            {error}
-          </StatusBanner>
-        ) : null}
+        <div id={statusId} aria-live="polite" aria-atomic="true">
+          {error ? (
+            <StatusBanner tone="error" title="Request could not be sent">
+              {error}
+            </StatusBanner>
+          ) : null}
+        </div>
       </form>
     </Modal>
   );

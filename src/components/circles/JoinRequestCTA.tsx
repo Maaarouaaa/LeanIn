@@ -4,7 +4,7 @@ import { JoinRequestModal } from "@/components/circles/JoinRequestModal";
 import { Button } from "@/components/ui/Button";
 import { StatusBanner } from "@/components/ui/People";
 import type { Circle, JoinRequest } from "@/lib/types";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 interface JoinRequestCTAProps {
   circle: Circle;
@@ -22,9 +22,21 @@ export function JoinRequestCTA({
   const [open, setOpen] = useState(false);
   const isPending = request?.status === "pending";
 
+  const handleClose = useCallback(() => {
+    setOpen(false);
+  }, []);
+
+  const handleSuccess = useCallback((next: JoinRequest) => {
+    setRequest(next);
+  }, []);
+
   return (
     <div className="space-y-3">
-      <div className={fullWidth ? "w-full" : "flex flex-col gap-3 sm:flex-row sm:items-center"}>
+      <div
+        className={
+          fullWidth ? "w-full" : "flex flex-col gap-3 sm:flex-row sm:items-center"
+        }
+      >
         {isPending ? (
           <Button
             disabled
@@ -45,7 +57,10 @@ export function JoinRequestCTA({
       </div>
 
       {isPending ? (
-        <StatusBanner tone="success" title="Your request is with the Circle leader.">
+        <StatusBanner
+          tone="success"
+          title="Your request is with the Circle leader."
+        >
           <p>
             {circle.leader.name} reviews new requests for this Circle. You’ll
             hear back once she responds.
@@ -56,8 +71,8 @@ export function JoinRequestCTA({
       <JoinRequestModal
         circle={circle}
         open={open}
-        onClose={() => setOpen(false)}
-        onSuccess={setRequest}
+        onClose={handleClose}
+        onSuccess={handleSuccess}
       />
     </div>
   );
